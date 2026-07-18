@@ -5,7 +5,8 @@
 #        os/scripts/gen-status.sh --check  exit 1 (writing nothing) if STATUS.md is stale
 #
 # Reports: last 10 worklog receipts · inbox count + oldest item age (days) ·
-# incubator counts by "status:" line · open flags (FLAG: lines in os/roadmap.md) ·
+# incubator counts by "status:" line · open flags (FLAG: lines in os/roadmap.md,
+# plus any decisions.md entry still "**Status:** draft" — void until confirmed, law 2) ·
 # git state (branch, dirty file count, unpushed commit count).
 # The dirty count excludes generated MAP.md/STATUS.md — counting the file this
 # script is about to write would make --check permanently unstable.
@@ -95,6 +96,16 @@ generate() {
   if [ -f os/roadmap.md ]; then
     grep -E '^FLAG:' os/roadmap.md > "$TMP/flags" || true
   fi
+  # Draft decision entries are open flags too: an unconfirmed rule is void (law 2)
+  # and must stay visible until the owner confirms or deletes it.
+  : > "$TMP/drafts"
+  if [ -f os/decisions.md ]; then
+    awk '/^## /            { h = $0; sub(/^## /, "", h) }
+         /^\*\*Status:\*\*[[:space:]]*draft/ {
+           printf "DRAFT decision (void until owner confirms, law 2): %s\n", h }' \
+      os/decisions.md > "$TMP/drafts"
+  fi
+  cat "$TMP/drafts" >> "$TMP/flags"
   fc=$(wc -l < "$TMP/flags"); fc=$((fc))
   if [ "$fc" -gt 0 ]; then
     sed 's/^/- /' "$TMP/flags"

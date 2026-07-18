@@ -26,4 +26,4 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 
 - branch: main
 - dirty files: 2 (generated MAP/STATUS excluded)
-- unpushed commits: (no upstream)
+- unpushed commits: 0
