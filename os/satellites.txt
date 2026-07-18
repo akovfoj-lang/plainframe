@@ -1,0 +1,10 @@
+# Satellite repos for os/scripts/drift-alert.sh to watch.
+#
+# Format: one absolute repo path per line, nothing else.
+# Lines starting with # and blank lines are skipped.
+# Listed paths that do not exist are skipped too, so future repos are safe to pre-list.
+#
+# Example (uncomment and adjust):
+# /home/you/repos/my-satellite
+#
+# os/scripts/sync.sh reads the same list: satellites sync first, this repo last (law 8).

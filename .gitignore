@@ -1,0 +1,14 @@
+# Secrets: values live in .env; only names are committed, in .env.example.
+.env
+
+# macOS noise.
+.DS_Store
+
+# Anything meant for this machine only.
+*.local.*
+
+# Works fine with Obsidian — just keep its plugins and workspace state out of git.
+.obsidian/
+
+# Satellites own code, but just in case something gets installed here.
+node_modules/
