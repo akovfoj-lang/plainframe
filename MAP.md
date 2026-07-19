@@ -19,3 +19,8 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
 - inbox/ — The dump zone: drop anything here, messy is fine — /sweep routes everything out, and nothing lives here.
 - incubator/ — Ideas in development: one file per idea, each carrying a lifecycle line from seed to adopted or dropped.
 - os/ — (no README)
+  - os/commands.md — Command manifest — the single source for every tool's adapters.
+  - os/decisions.md — Decisions
+  - os/roadmap.md — Roadmap
+  - os/routine.md — Routine
+  - os/worklog.md — Worklog

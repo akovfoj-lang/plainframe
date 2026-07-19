@@ -62,7 +62,8 @@ persists it; `drift-alert` watches without touching. `os/decisions.md` sits abov
 
 ## Quickstart
 
-1. Click **Use this template** on GitHub, then clone your copy.
+1. Click **Use this template** on GitHub and make your copy **private** — the template is
+   public and generic; your copy holds your real life and work. Then clone it.
 2. Open the repo in any agent (Claude Code, Codex, whatever you use).
 3. Tell it: **"Read AGENTS.md and run /guide."** That is the whole onboarding.
 4. Add your first area: copy `_templates/area.md` into `areas/<your-thing>/README.md`.

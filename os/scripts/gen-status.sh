@@ -10,6 +10,9 @@
 # git state (branch, dirty file count, unpushed commit count).
 # The dirty count excludes generated MAP.md/STATUS.md — counting the file this
 # script is about to write would make --check permanently unstable.
+# --check ignores volatile lines (dirty files, unpushed commits, oldest age):
+# they are true at generation time but drift with no repo change — a committed
+# STATUS would otherwise be stale-by-construction on every clean clone.
 # STATUS.md is only ever written by this script (law 6).
 
 set -eu
@@ -134,15 +137,22 @@ generate() {
 
 generate > "$TMP/STATUS.md"
 
+# Drop lines that drift with no repo change — see header. Never used when writing.
+strip_volatile() {
+  grep -vE '^- (dirty files|unpushed commits|oldest):' "$1" || true
+}
+
 if [ "${1:-}" = "--check" ]; then
   if [ ! -f STATUS.md ]; then
     echo "STALE: STATUS.md is missing. Run os/scripts/gen-status.sh."
     exit 1
   fi
-  if diff -u STATUS.md "$TMP/STATUS.md" > "$TMP/diff"; then
+  strip_volatile STATUS.md > "$TMP/cur"
+  strip_volatile "$TMP/STATUS.md" > "$TMP/new"
+  if diff -u "$TMP/cur" "$TMP/new" > "$TMP/diff"; then
     echo "OK: STATUS.md is current"
   else
-    echo "STALE: STATUS.md is out of date (current vs regenerated):"
+    echo "STALE: STATUS.md is out of date (current vs regenerated, volatile lines ignored):"
     cat "$TMP/diff"
     echo "Run os/scripts/gen-status.sh to regenerate."
     exit 1

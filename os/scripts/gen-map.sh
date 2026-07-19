@@ -7,6 +7,9 @@
 # A home's one-line description is the first non-empty line after the H1 in its
 # README.md — "(no README)" if the file is absent. Root files use their own H1.
 # archive/ is always a single line; areas/ also lists each area one level deep.
+# os/ lists its core kernel files (ledger, roadmap, routine, worklog, commands) —
+# law 1 says agents reach pages only through MAP, so the ledger law 2 elevates
+# above everything must be routable from here.
 # Output is deterministic (LC_ALL=C, stable glob order).
 # MAP.md is only ever written by this script (law 6).
 
@@ -72,6 +75,15 @@ generate() {
       for s in areas/*/; do
         [ -d "$s" ] || continue
         home_line "${s%/}" "  "
+      done
+    fi
+    # os/ lists the kernel core files so law 1 can actually reach them.
+    if [ "$d" = "os" ]; then
+      for kf in os/commands.md os/decisions.md os/roadmap.md os/routine.md os/worklog.md; do
+        [ -f "$kf" ] || continue
+        kt=$(file_h1 "$kf")
+        [ -n "$kt" ] || kt="(no title)"
+        printf -- '  - %s — %s\n' "$kf" "$kt"
       done
     fi
   done

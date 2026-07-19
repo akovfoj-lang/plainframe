@@ -11,4 +11,4 @@ Give a human or an agent the friendly tour, from zero.
 7. Explain why the pieces hold each other up: receipts stop prose from claiming "done"; generated MAP and STATUS cannot lie about the tree; decisions outrank pages, so there is one truth; notify-only automation means a robot never commits a half-thought.
 8. End where every session begins: glance at STATUS.md, pick a task, leave a receipt.
 
-Receipt: append `YYYY-MM-DD guide: <summary>` to os/worklog.md.
+No receipt: /guide changes nothing. Receipts record state-changing work (law 9) — logging pure reads would bury the signal under noise.

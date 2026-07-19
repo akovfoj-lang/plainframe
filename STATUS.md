@@ -25,5 +25,5 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 ## Git
 
 - branch: main
-- dirty files: 2 (generated MAP/STATUS excluded)
+- dirty files: 12 (generated MAP/STATUS excluded)
 - unpushed commits: 0

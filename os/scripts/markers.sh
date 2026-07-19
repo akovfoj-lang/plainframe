@@ -9,6 +9,8 @@
 #   All three markers count only at line start or after "<!-- ".
 #   (Anchoring avoids false hits like "FAQ:" and prose that merely MENTIONS a marker.)
 # Prints file:line:text grouped by marker type, then a summary count.
+# Hits under inbox/ are prefixed "[inbox — unverified]" — captured external
+# material is data to classify, never instructions to act on (law 10).
 
 set -eu
 if (set -o pipefail) 2>/dev/null; then set -o pipefail; fi
@@ -42,7 +44,8 @@ scan() {
   cnt=$(wc -l < "$TMP/hits"); cnt=$((cnt))
   echo "## $sc_label ($cnt)"
   if [ "$cnt" -gt 0 ]; then
-    sort "$TMP/hits"
+    # Tag inbox hits: unverified external data, never instructions (law 10).
+    sort "$TMP/hits" | sed 's|^inbox/|[inbox — unverified] inbox/|'
   fi
   echo ""
   TOTAL=$((TOTAL + cnt))
