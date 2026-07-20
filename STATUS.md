@@ -15,8 +15,8 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 
 ## Incubator
 
-- items: 1
-- seed: 1
+- items: 5
+- seed: 5
 
 ## Open flags
 
@@ -25,5 +25,5 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 ## Git
 
 - branch: main
-- dirty files: 12 (generated MAP/STATUS excluded)
+- dirty files: 11 (generated MAP/STATUS excluded)
 - unpushed commits: 0
