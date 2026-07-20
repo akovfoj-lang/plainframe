@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# pre-commit — Plainframe guardrail. Wire once: os/scripts/doctor.sh --setup
+#
+# Blocks a commit whose generated files are stale (law 6). Calls the canonical
+# --check scripts; policy stays in them, never here. Bypass once (owner's call):
+# git commit --no-verify.
+
+set -eu
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+
+FAIL=0
+for c in gen-map gen-status gen-commands; do
+  if /bin/bash "os/scripts/$c.sh" --check >/dev/null 2>&1; then :; else
+    echo "pre-commit: os/scripts/$c.sh --check FAILED — regenerate and re-stage (law 6)" >&2
+    FAIL=1
+  fi
+done
+[ "$FAIL" -eq 0 ] || exit 1

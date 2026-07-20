@@ -29,7 +29,7 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT"
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/gen-status.XXXXXX")
-trap 'rm -rf "$TMP"' EXIT
+trap 'rm -rf "$TMP" ".STATUS.md.$$"' EXIT
 
 # mtime in epoch seconds — BSD stat first, GNU stat as fallback.
 file_mtime() {
@@ -56,19 +56,22 @@ generate() {
 
   # -- Inbox -----------------------------------------------------------------
   printf '\n## Inbox\n\n'
-  : > "$TMP/inbox"
+  : > "$TMP/inbox0"
   if [ -d inbox ]; then
-    find inbox -type f ! -name 'README.md' ! -name '.*' > "$TMP/inbox"
+    # NUL-delimited: inbox filenames are external data — even a newline inside
+    # one must not split a record or crash the count.
+    find inbox -type f ! -name 'README.md' ! -name '.*' -print0 > "$TMP/inbox0"
   fi
-  ic=$(wc -l < "$TMP/inbox"); ic=$((ic))
+  ic=0
+  oldest=""
+  while IFS= read -r -d '' f; do
+    ic=$((ic + 1))
+    m=$(file_mtime "$f")
+    if [ -z "$oldest" ] || [ "$m" -lt "$oldest" ]; then oldest=$m; fi
+  done < "$TMP/inbox0"
   printf -- '- items: %s\n' "$ic"
   if [ "$ic" -gt 0 ]; then
     now=$(date +%s)
-    oldest=""
-    while IFS= read -r f; do
-      m=$(file_mtime "$f")
-      if [ -z "$oldest" ] || [ "$m" -lt "$oldest" ]; then oldest=$m; fi
-    done < "$TMP/inbox"
     printf -- '- oldest: %s day(s)\n' "$(( (now - oldest) / 86400 ))"
   else
     printf -- '- oldest: n/a\n'
@@ -130,6 +133,28 @@ generate() {
     else
       printf -- '- unpushed commits: (no upstream)\n'
     fi
+    # Satellites: one line each — a stuck satellite must not rot invisibly
+    # behind a clean main repo (law 8). Volatile: stripped in --check.
+    if [ -f os/satellites.txt ]; then
+      sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' os/satellites.txt \
+        | sed '/^$/d' > "$TMP/sats"
+      while IFS= read -r sp; do
+        case $sp in "~/"*) sp="$HOME/${sp#\~/}" ;; esac
+        if [ ! -e "$sp" ]; then
+          printf -- '- satellite %s: missing\n' "$sp"
+        elif ! git -C "$sp" rev-parse --git-dir >/dev/null 2>&1; then
+          printf -- '- satellite %s: not a git repo\n' "$sp"
+        else
+          sd=$(git -C "$sp" status --porcelain | wc -l); sd=$((sd))
+          if git -C "$sp" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+            sa=$(git -C "$sp" rev-list --count '@{u}..HEAD'); sa=$((sa))
+          else
+            sa="(no upstream)"
+          fi
+          printf -- '- satellite %s: dirty %s, unpushed %s\n' "$sp" "$sd" "$sa"
+        fi
+      done < "$TMP/sats"
+    fi
   else
     printf -- '- (not a git repo)\n'
   fi
@@ -139,7 +164,7 @@ generate > "$TMP/STATUS.md"
 
 # Drop lines that drift with no repo change — see header. Never used when writing.
 strip_volatile() {
-  grep -vE '^- (dirty files|unpushed commits|oldest):' "$1" || true
+  grep -vE '^- (dirty files|unpushed commits|oldest):|^- satellite ' "$1" || true
 }
 
 if [ "${1:-}" = "--check" ]; then
@@ -158,6 +183,9 @@ if [ "${1:-}" = "--check" ]; then
     exit 1
   fi
 else
-  cp "$TMP/STATUS.md" STATUS.md
+  # Temp sibling + mv: a failure mid-write must never leave a truncated STATUS.
+  NEW=".STATUS.md.$$"
+  cp "$TMP/STATUS.md" "$NEW"
+  mv "$NEW" STATUS.md
   echo "OK: STATUS.md written"
 fi

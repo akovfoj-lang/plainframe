@@ -28,7 +28,8 @@ fi
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/markers.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
-git ls-files | grep -vE '^(MAP\.md|STATUS\.md|os/scripts/)' > "$TMP/files" || true
+# NUL-delimited: a filename with a newline in it must not split into two paths.
+git ls-files -z > "$TMP/files0"
 
 TOTAL=0
 
@@ -36,11 +37,13 @@ scan() {
   sc_label=$1
   sc_regex=$2
   : > "$TMP/hits"
-  while IFS= read -r f; do
+  while IFS= read -r -d '' f; do
+    case $f in MAP.md|STATUS.md|os/scripts/*) continue ;; esac
     [ -f "$f" ] || continue
-    # /dev/null forces the file:line: prefix; -I skips binaries.
-    grep -InE "$sc_regex" "$f" /dev/null >> "$TMP/hits" || true
-  done < "$TMP/files"
+    # /dev/null forces the file:line: prefix; -I skips binaries;
+    # -- ends option parsing so a file named "-something.md" is data, not flags.
+    grep -InE "$sc_regex" -- "$f" /dev/null >> "$TMP/hits" || true
+  done < "$TMP/files0"
   cnt=$(wc -l < "$TMP/hits"); cnt=$((cnt))
   echo "## $sc_label ($cnt)"
   if [ "$cnt" -gt 0 ]; then

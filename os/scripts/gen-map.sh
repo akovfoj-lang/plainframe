@@ -27,7 +27,7 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT"
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/gen-map.XXXXXX")
-trap 'rm -rf "$TMP"' EXIT
+trap 'rm -rf "$TMP" ".MAP.md.$$"' EXIT
 
 # First non-empty line after the first H1; prints nothing if there is none.
 readme_desc() {
@@ -91,6 +91,13 @@ generate() {
 
 generate > "$TMP/MAP.md"
 
+# Soft token budget: MAP is read in full every session — growth here is boot
+# cost for every future session. Warn, never fail.
+words=$(wc -w < "$TMP/MAP.md"); words=$((words))
+if [ "$words" -gt 350 ]; then
+  echo "WARN: MAP.md is $words words (soft budget 350) — tighten descriptions or archive finished areas" >&2
+fi
+
 if [ "${1:-}" = "--check" ]; then
   if [ ! -f MAP.md ]; then
     echo "STALE: MAP.md is missing. Run os/scripts/gen-map.sh."
@@ -105,6 +112,9 @@ if [ "${1:-}" = "--check" ]; then
     exit 1
   fi
 else
-  cp "$TMP/MAP.md" MAP.md
+  # Temp sibling + mv: a failure mid-write must never leave a truncated MAP.
+  NEW=".MAP.md.$$"
+  cp "$TMP/MAP.md" "$NEW"
+  mv "$NEW" MAP.md
   echo "OK: MAP.md written"
 fi

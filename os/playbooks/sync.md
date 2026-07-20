@@ -9,11 +9,12 @@ Run at session end, after any milestone, and before stepping away for long.
 3. Run `os/scripts/sync.sh "<commit message>"`. For each satellite, then for this repo, it: pulls with `--ff-only`, stages everything, commits if the tree is dirty, pushes.
 4. Satellites go first so this repo's pointer pages never claim work a satellite has not pushed yet. Main goes last so the receipts land only after everything they point to is safe.
 5. If a pull is blocked, sync.sh stops and says so. Resolve it per `os/playbooks/resolve-conflict.md`, then rerun.
+6. If sync reports `BLOCKED: protected paths changed`, that is law 7 working: a dirty `CLAUDE.md`, `os/scripts/`, or non-draft ledger change may not ride an ordinary sync. Show the owner exactly what changed; with their explicit in-session yes, rerun as `os/scripts/sync.sh "OWNER-CONFIRMED: <message>"`. Draft appends to the ledger pass without any token — drafting is the agent's half of the bargain.
 
 ## Scheduling is notify-only (law 8)
 
-6. Never schedule sync.sh itself. A robot on a timer will snapshot half-written pages. Schedule `os/scripts/drift-alert.sh` instead — it only reports dirty trees and unpushed commits, and a human (or an in-session agent) runs /sync deliberately.
-7. Hook drift-alert to cron, launchd, or your scheduler. Cron example (uncomment and fix the path to install):
+7. Never schedule sync.sh itself. A robot on a timer will snapshot half-written pages. Schedule `os/scripts/drift-alert.sh` instead — it only reports dirty trees and unpushed commits, and a human (or an in-session agent) runs /sync deliberately.
+8. Hook drift-alert to cron, launchd, or your scheduler. Cron example (uncomment and fix the path to install):
 
    ```
    # Report drift every day at 09:00 — notify-only, never commits:

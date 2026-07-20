@@ -12,3 +12,13 @@
 
 # Satellites own code, but just in case something gets installed here.
 node_modules/
+
+# Credential shapes an integration can drop on disk — belt and braces; real
+# values live in .env or the password manager, never in git.
+*.pem
+*.key
+id_rsa*
+*credentials*.json
+.netrc
+*.db
+*.sqlite

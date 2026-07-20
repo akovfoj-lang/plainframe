@@ -66,6 +66,13 @@ Changing any of these is Ask-first (law 7) — agents draft, the owner enacts:
 - the autonomy table above
 - permissions and `.env` scope
 
+Enforced mechanically, not just by prose: `sync.sh` blocks when `CLAUDE.md`,
+`os/scripts/`, or a non-draft ledger change is dirty — the owner enacts by
+rerunning sync with `OWNER-CONFIRMED` in the commit message. Appending a
+`**Status:** draft` entry to the ledger passes freely: agents draft, the owner
+enacts. `os/scripts/doctor.sh --setup` adds a pre-commit hook that blocks
+commits carrying stale generated files (law 6).
+
 ## Where the rest lives
 
 - Full orientation for a human: `os/playbooks/guide.md` (run `/guide`).
