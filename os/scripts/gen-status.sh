@@ -31,9 +31,20 @@ cd "$ROOT"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/gen-status.XXXXXX")
 trap 'rm -rf "$TMP" ".STATUS.md.$$"' EXIT
 
-# mtime in epoch seconds — BSD stat first, GNU stat as fallback.
+# mtime in epoch seconds — BSD stat first, GNU stat as fallback. Each probe's
+# stdout is captured on its own command substitution (a GNU stat rejecting the
+# BSD-style flags still prints filesystem info before it fails, and that must
+# never leak into the result), and the result is validated as a plain integer
+# before use — a probe that produces neither is a loud internal error, never a
+# silent unbound var downstream.
 file_mtime() {
-  if stat -f %m "$1" 2>/dev/null; then :; else stat -c %Y "$1"; fi
+  m=$(stat -f %m -- "$1" 2>/dev/null) || m=$(stat -c %Y -- "$1" 2>/dev/null) || m=""
+  case "$m" in
+    ''|*[!0-9]*)
+      echo "internal error: cannot read mtime for $1 (stat probe failed on both BSD and GNU forms)" >&2
+      return 2 ;;
+  esac
+  printf '%s\n' "$m"
 }
 
 generate() {

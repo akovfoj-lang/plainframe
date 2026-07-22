@@ -4,7 +4,9 @@
 
 Your files are the operating system. AI agents are interchangeable operators who read it,
 obey its laws, and leave receipts. The repo is the memory, the rulebook, and the interface —
-so any agent, today's or next year's, can pick up exactly where the last one left off.
+so any agent that can read plain text and follow instructions can pick up exactly where the
+last one left off. Claude Code and Codex get it as native slash commands today; every other
+agent reads the same playbooks directly.
 
 Nothing here is decorative. Every mechanism prevents a specific way that notes-plus-a-chatbot
 quietly rots.
@@ -114,14 +116,18 @@ Full text in [CLAUDE.md](CLAUDE.md). One line each:
 ## One repo, many agents
 
 Plainframe is not a Claude thing. The kernel — the laws, the playbooks, the ledger — holds
-nothing tool-specific. Each agent gets adapters in its own dialect:
+nothing tool-specific. Two agents currently have generated, native command adapters; any
+other agent still runs Plainframe fine by reading the kernel directly:
 
-- Claude reads `.claude/commands/<name>.md`.
-- Other agents read `.agents/skills/<name>/SKILL.md`.
+- Claude Code reads `.claude/commands/<name>.md` as native slash commands.
+- Codex reads `.agents/skills/<name>/SKILL.md` as a native skill format.
+- Anything else (Gemini CLI and future tools included) has no generated adapter yet — point
+  it at `AGENTS.md` and the playbooks in `os/playbooks/`; it works, just without a native
+  command surface until that agent gets its own adapter.
 
-Both sets are generated from `os/commands.md` by `os/scripts/gen-commands.sh`, so they can
-never disagree. Swap agents whenever you like — the repo is the constant; the operator is
-replaceable.
+The two generated sets come from `os/commands.md` by `os/scripts/gen-commands.sh`, so they
+can never disagree with each other. Swap agents whenever you like — the repo is the
+constant; the operator is replaceable.
 
 ---
 

@@ -12,7 +12,7 @@ Monthly health report: 🟢🟡🔴 flags only. The audit never deletes anything
    - Superseded ledger entries: any `os/decisions.md` entry named by a newer entry's `Supersedes:` field. `os/decisions.md` is a protected path (law 7): draft a proposed move of each into `archive/decisions-superseded.md` in the report; the owner enacts the actual move, the agent never moves it.
    - Inbox age: any item older than 7 days.
    - Incubator drift: any idea sitting in the same status >60 days.
-   - Worklog epoch: `os/worklog.md` has crossed into a new calendar year. Draft rolling the prior year's receipts into `archive/worklog-YYYY.md` in the report; the owner enacts the move.
+   - Worklog epoch: `os/worklog.md` has crossed into a new calendar year. Draft rolling the prior year's receipts into `archive/worklog-YYYY.md`, plus the pointer line (`YYYY → archive/worklog-YYYY.md`) to add under worklog.md's "Archived epochs" section, in the report; the owner enacts both moves together — a rotation without the pointer line strands those receipts outside law 9.
    - Invisible homes: gitignored or external homes missing a tracked pointer page (law 4).
 2. Write the results to a dated report: `archive/audit-YYYY-MM-DD.md`. One section per check; every flag lists its file path. The audit writes nothing else.
 3. Fix nothing during the audit. Deletion and demotion are human decisions — put proposals in the report and act only after the owner says yes.

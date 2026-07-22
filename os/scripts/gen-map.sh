@@ -40,6 +40,15 @@ file_h1() {
   awk '/^# / { sub(/^#[[:space:]]*/, ""); sub(/[[:space:]]+$/, ""); print; exit }' "$1"
 }
 
+# True if the given path is gitignored (or simply untracked-and-ignorable) —
+# a deterministic MAP must not depend on ignored build/install artifacts that
+# differ machine to machine (e.g. node_modules/). Safe outside a git repo or
+# when git is unavailable: git-check-ignore's failure there is treated as
+# "not ignored", which just falls back to the pre-existing behavior.
+is_ignored() {
+  git check-ignore -q -- "$1" 2>/dev/null
+}
+
 # Print "- <dir>/ — <desc>" for one home directory.
 home_line() {
   hl_dir=$1
@@ -69,12 +78,15 @@ generate() {
   for d in */; do
     [ -d "$d" ] || continue
     d=${d%/}
+    is_ignored "$d" && continue
     home_line "$d" ""
     # areas/ lists each area; archive/ (and everything else) stays one line.
     if [ "$d" = "areas" ]; then
       for s in areas/*/; do
         [ -d "$s" ] || continue
-        home_line "${s%/}" "  "
+        s=${s%/}
+        is_ignored "$s" && continue
+        home_line "$s" "  "
       done
     fi
     # os/ lists the kernel core files so law 1 can actually reach them.

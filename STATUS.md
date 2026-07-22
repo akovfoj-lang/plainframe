@@ -11,7 +11,7 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 ## Inbox
 
 - items: 1
-- oldest: 0 day(s)
+- oldest: 2 day(s)
 
 ## Incubator
 
@@ -25,5 +25,5 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 ## Git
 
 - branch: main
-- dirty files: 11 (generated MAP/STATUS excluded)
+- dirty files: 8 (generated MAP/STATUS excluded)
 - unpushed commits: 0
