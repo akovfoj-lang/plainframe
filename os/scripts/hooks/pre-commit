@@ -2,17 +2,56 @@
 # pre-commit — Plainframe guardrail. Wire once: os/scripts/doctor.sh --setup
 #
 # Blocks a commit whose generated files are stale (law 6). Calls the canonical
-# --check scripts; policy stays in them, never here. Bypass once (owner's call):
-# git commit --no-verify.
+# --check scripts; policy stays in them, never here. Bypass once (owner's
+# call): git commit --no-verify — break-glass only, never routine; it skips
+# this gate entirely and leaves no trace that it did.
+#
+# Checks the STAGED INDEX, not the worktree (PF-002): `git checkout-index`
+# exports exactly what is staged into a throwaway, non-git temp directory,
+# and the --check scripts run against THAT export — the real working tree is
+# never touched. (An earlier version of this hook used
+# `git stash push --keep-index` to collapse the worktree onto the index in
+# place; that MUTATES the real working tree, and a file with staged and
+# unstaged edits in the very same region can come back from the pop with
+# conflict markers baked in. A read-only export sidesteps the whole class of
+# bug — nothing about the real worktree ever changes here.)
+#
+# The export has no .git of its own, so the git-aware bits of the --check
+# scripts fall back to their already-designed "not a git repo" behavior
+# (gen-map.sh's is_ignored(), gen-status.sh's Git section) — that is
+# environment noise, not real drift, so gen-status.sh's staleness diff
+# ignores it (see strip_volatile there).
+#
+# Fails CLOSED: if the temp dir or the export cannot be built for any
+# reason, the commit is blocked with an internal-error message rather than
+# silently falling back to checking the (untrustworthy, for this purpose)
+# live worktree.
 
 set -eu
 ROOT=$(git rev-parse --show-toplevel)
 cd "$ROOT"
 
+EXPORT=$(mktemp -d "${TMPDIR:-/tmp}/pre-commit-index.XXXXXX") || {
+  echo "pre-commit: could not create a temp dir to validate the staged index (internal error) — commit blocked" >&2
+  exit 2
+}
+trap 'rm -rf "$EXPORT"' EXIT
+
+if ! git checkout-index --prefix="$EXPORT/" -a; then
+  echo "pre-commit: could not export the staged index for validation (internal error) — commit blocked" >&2
+  exit 2
+fi
+
 FAIL=0
 for c in gen-map gen-status gen-commands; do
-  if /bin/bash "os/scripts/$c.sh" --check >/dev/null 2>&1; then :; else
-    echo "pre-commit: os/scripts/$c.sh --check FAILED — regenerate and re-stage (law 6)" >&2
+  if /bin/bash "$EXPORT/os/scripts/$c.sh" --check >/dev/null 2>&1; then
+    :
+  else
+    rc=$?
+    case $rc in
+      1) echo "pre-commit: os/scripts/$c.sh --check — STALE (exit 1) in the staged index: regenerate and re-stage (law 6)" >&2 ;;
+      *) echo "pre-commit: os/scripts/$c.sh --check — internal error (exit $rc) validating the staged index, not a simple staleness issue" >&2 ;;
+    esac
     FAIL=1
   fi
 done

@@ -90,19 +90,25 @@ generate() {
 
   # -- Incubator -------------------------------------------------------------
   printf '\n## Incubator\n\n'
-  : > "$TMP/inc"
+  # NUL-delimited end to end: an incubator filename with an embedded newline
+  # must not split into two records — a plain `find | sort` piped into a
+  # newline-delimited `while read` would hand awk half a filename, which then
+  # fails to open it and (under set -e) crashes gen-status outright (PF-020).
+  : > "$TMP/inc0"
   if [ -d incubator ]; then
-    find incubator -maxdepth 1 -type f -name '*.md' ! -name 'README.md' | sort > "$TMP/inc"
+    find incubator -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0 \
+      | sort -z > "$TMP/inc0"
   fi
-  nc=$(wc -l < "$TMP/inc"); nc=$((nc))
+  nc=0
+  while IFS= read -r -d '' _f; do nc=$((nc + 1)); done < "$TMP/inc0"
   printf -- '- items: %s\n' "$nc"
   if [ "$nc" -gt 0 ]; then
     : > "$TMP/statuses"
-    while IFS= read -r f; do
+    while IFS= read -r -d '' f; do
       s=$(awk 'sub(/^status:[[:space:]]*/, "") { sub(/[[:space:]]+$/, ""); print; exit }' "$f")
       [ -n "$s" ] || s="(no status)"
       printf '%s\n' "$s" >> "$TMP/statuses"
-    done < "$TMP/inc"
+    done < "$TMP/inc0"
     sort "$TMP/statuses" | uniq -c \
       | awk '{ c = $1; $1 = ""; sub(/^ /, ""); printf "- %s: %d\n", $0, c }'
   fi
@@ -174,8 +180,16 @@ generate() {
 generate > "$TMP/STATUS.md"
 
 # Drop lines that drift with no repo change — see header. Never used when writing.
+# `branch` joined dirty/unpushed/oldest/satellite here (MAJOR 4): switching
+# branches must not block every commit until a regen nobody asked for.
+# `(not a git repo)` is here too — not because it drifts on a real clone,
+# but because the pre-commit hook validates the STAGED INDEX by exporting it
+# to a plain, non-git temp directory (PF-002) and running this script
+# against that export; git genuinely is unavailable there, which is a fact
+# about the checking environment, not about repo content, so it must never
+# read as staleness.
 strip_volatile() {
-  grep -vE '^- (dirty files|unpushed commits|oldest):|^- satellite ' "$1" || true
+  grep -vE '^- (dirty files|unpushed commits|oldest|branch):|^- satellite |^- \(not a git repo\)$' "$1" || true
 }
 
 if [ "${1:-}" = "--check" ]; then

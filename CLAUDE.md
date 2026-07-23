@@ -72,17 +72,41 @@ Kill switch: the owner saying "stop" voids all in-flight permissions.
 Changing any of these is Ask-first (law 7) — agents draft, the owner enacts:
 
 - `CLAUDE.md` — this constitution
+- `AGENTS.md` — the non-Claude entry point, kept in lockstep with this file
 - `os/decisions.md` — the ledger
-- `os/scripts/` — the deterministic generators
+- `os/scripts/` — the deterministic generators, including `os/scripts/hooks/`
+- `os/playbooks/` — the procedures every command follows
+- `os/commands.md` — the command manifest (governs what gets generated)
+- `.gitignore` — what never reaches git (loosening it can expose secrets)
+- `os/satellites.txt` — which repos `/sync` reaches into
 - the autonomy table above
 - permissions and `.env` scope
 
-Enforced mechanically, not just by prose: `sync.sh` blocks when `CLAUDE.md`,
-`os/scripts/`, or a non-draft ledger change is dirty — the owner enacts by
-rerunning sync with `OWNER-CONFIRMED` in the commit message. Appending a
-`**Status:** draft` entry to the ledger passes freely: agents draft, the owner
-enacts. `os/scripts/doctor.sh --setup` adds a pre-commit hook that blocks
-commits carrying stale generated files (law 6).
+Enforced mechanically, not just by prose, at two layers: `sync.sh` checks
+first (fast, friendly message), and `os/scripts/hooks/commit-msg` checks
+again at the git level so a raw `git commit` on any of these — bypassing
+`/sync` entirely — is blocked too, not just an agent-driven one. The owner
+enacts by rerunning with a commit message that has `OWNER-CONFIRMED` as its
+own line — trimmed of surrounding whitespace, that line is nothing else. A
+mention, a prefix (`OWNER-CONFIRMED: ...`), or a negation ("this is NOT
+OWNER-CONFIRMED yet") never counts; only a standalone approval line does.
+Appending a `**Status:** draft` entry to the ledger passes freely: agents
+draft, the owner enacts; editing an existing ledger line — even a mid-entry
+insertion that adds without deleting — still needs the token.
+`os/scripts/doctor.sh --setup` wires both hooks: `pre-commit` blocks commits
+carrying stale generated files (law 6), checked against an export of what
+is actually staged, never the live worktree; `commit-msg` blocks commits
+touching a protected path. A satellite (`os/satellites.txt`) with its own
+uncommitted work is never swept into a commit sight-unseen either: `sync.sh`
+lists the files and skips that satellite unless the commit message has
+`SATELLITE-CONFIRMED` as its own line — a separate token, so confirming a
+main-repo protected-path edit never accidentally waves through an unrelated
+satellite's stray files.
+
+These hooks are a guardrail, not a security boundary: `git commit
+--no-verify` skips them entirely and leaves no trace that it did. That is
+break-glass only — an owner's deliberate, occasional call when a hook is
+wrong — never a routine way around a block.
 
 ## Where the rest lives
 

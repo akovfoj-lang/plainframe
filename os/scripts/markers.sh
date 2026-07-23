@@ -40,9 +40,18 @@ scan() {
   while IFS= read -r -d '' f; do
     case $f in MAP.md|STATUS.md|os/scripts/*) continue ;; esac
     [ -f "$f" ] || continue
-    # /dev/null forces the file:line: prefix; -I skips binaries;
-    # -- ends option parsing so a file named "-something.md" is data, not flags.
-    grep -InE "$sc_regex" -- "$f" /dev/null >> "$TMP/hits" || true
+    # A filename with an embedded newline is one NUL-delimited record here,
+    # but grep's own "file:line:text" prefix would print that raw filename
+    # verbatim — splitting one hit across two physical lines in $TMP/hits and
+    # double-counting it downstream (wc -l counts newlines, not hits) (PF-020).
+    # -h drops grep's own filename prefix; we prepend a newline-sanitized one
+    # ourselves. -I skips binaries; -- ends option parsing so a file named
+    # "-something.md" is data, not flags.
+    f_safe=$(printf '%s' "$f" | tr '\n' ' ')
+    if grep -hInE "$sc_regex" -- "$f" 2>/dev/null \
+        | while IFS= read -r hitline; do printf '%s:%s\n' "$f_safe" "$hitline"; done \
+        >> "$TMP/hits"
+    then :; fi
   done < "$TMP/files0"
   cnt=$(wc -l < "$TMP/hits"); cnt=$((cnt))
   echo "## $sc_label ($cnt)"

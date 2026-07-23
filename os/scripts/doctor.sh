@@ -36,7 +36,16 @@ fi
 
 FAIL=0
 for c in gen-map gen-status gen-commands; do
-  if /bin/bash "os/scripts/$c.sh" --check; then :; else FAIL=1; fi
+  if /bin/bash "os/scripts/$c.sh" --check; then
+    :
+  else
+    rc=$?
+    case $rc in
+      1) echo "FAIL: os/scripts/$c.sh --check — stale (exit 1)" ;;
+      *) echo "FAIL: os/scripts/$c.sh --check — internal error (exit $rc), not a simple staleness issue" ;;
+    esac
+    FAIL=1
+  fi
 done
 
 if /bin/bash os/scripts/markers.sh >/dev/null; then

@@ -140,7 +140,9 @@ it with your real life and work. No content here assumes any domain.
 **What are satellites?**
 Sibling repos you already have (a codebase, a site). List their paths in `os/satellites.txt`
 and `/sync` + `drift-alert` will watch them too. Plainframe stays the hub; satellites keep
-their own homes and get pointer pages here.
+their own homes and get pointer pages here. `/sync` never sweeps a satellite's uncommitted
+work in sight-unseen: a dirty satellite is listed and skipped until the commit message has
+`SATELLITE-CONFIRMED` as its own line — reviewed, not assumed.
 
 **Does this work for a team?**
 Yes. It's a git repo — branch, review, and merge as usual. The autonomy table and the ship
