@@ -66,16 +66,26 @@ persists it; `drift-alert` watches without touching. `os/decisions.md` sits abov
 
 1. Click **Use this template** on GitHub and make your copy **private** — the template is
    public and generic; your copy holds your real life and work. Then clone it.
-2. Open the repo in any agent (Claude Code, Codex, whatever you use).
-3. Tell it: **"Read AGENTS.md and run /guide."** That is the whole onboarding.
-4. Add your first area: copy `_templates/area.md` into `areas/<your-thing>/README.md`.
-5. Drop a note in `inbox/`, then run **/sweep** to watch it get routed and receipted.
+2. Open the repo in a coding agent with local file and shell access — a CLI like Claude
+   Code or Codex, not a plain web chatbot — since it needs to read, edit, and run commands
+   in your clone, not just chat about it.
+3. Tell it: **"Read AGENTS.md and run /guide."** That covers onboarding the agent itself.
+4. From there, your first real task: add your first area — copy `_templates/area.md` into
+   `areas/<your-thing>/README.md`.
+5. Then drop a note in `inbox/` and run **/sweep** to watch it get routed and receipted.
 
 No install, no build, no dependencies beyond `git` and a POSIX shell. Works on macOS
 (bash 3.2, BSD tools) and Linux (GNU) alike.
 
+The first time an integration needs `.env`, the owner creates it once with
+`cp .env.example .env` and types real values in by hand — never ask the agent to create
+`.env` or write a secret value into it (Never-tier, law 7; see
+[os/playbooks/add-integration.md](os/playbooks/add-integration.md)).
+
 Optional hardening, one command: `os/scripts/doctor.sh --setup` wires a pre-commit hook
-that blocks commits carrying stale generated files, and health-checks the whole repo.
+that blocks commits carrying stale generated files, and health-checks the whole repo. It
+sets local git config (`core.hooksPath`), which git never syncs or clones — rerun
+`doctor.sh --setup` on every machine or fresh clone you work from.
 
 ---
 
@@ -174,6 +184,14 @@ review, and merge like any other; the autonomy table and the ship gate constrain
 operator, human or agent, the same way regardless of who they are. Worklog receipts and
 ledger entries can carry an optional `actor:` / `Actor:` field so entries are attributable
 to whoever (or whichever agent) wrote them.
+
+On a shared repo, "the owner" effectively means *whoever has push access* — Plainframe has
+no identity system or role check of its own. The `OWNER-CONFIRMED` commit-message token
+(see [CLAUDE.md](CLAUDE.md)'s protected paths) is a deliberate-human-review tripwire — it
+forces a pause and an explicit, on-the-record yes before a protected path changes — not an
+authentication or authorization check: anyone who can push a commit can type the token.
+Real access control is whatever your git host's branch protection and review rules make it,
+not something this repo enforces on its own.
 
 What it is **not**: there is no file locking, no entry ownership, and no concurrent-edit
 protection. Two people — or an owner and an agent — editing the same page at the same time

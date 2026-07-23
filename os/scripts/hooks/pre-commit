@@ -24,8 +24,15 @@
 #
 # Fails CLOSED: if the temp dir or the export cannot be built for any
 # reason, the commit is blocked with an internal-error message rather than
-# silently falling back to checking the (untrustworthy, for this purpose)
-# live worktree.
+# silently falling back to checking the (untrustworthy, for this worktree
+# validation) live worktree.
+#
+# Also runs the staged-secrets tripwire (PF-014) that used to live only in
+# doctor.sh, run by hand — folded in here so it actually fires on every
+# commit. Sources os/scripts/lib/secrets.sh, the same lib doctor.sh uses, so
+# the pattern can never drift between the two call sites (law 3). Strictly
+# warn-only: a hit is printed to stderr but NEVER sets FAIL or blocks the
+# commit — that stays true to its original design in doctor.sh.
 
 set -eu
 ROOT=$(git rev-parse --show-toplevel)
@@ -55,4 +62,16 @@ for c in gen-map gen-status gen-commands; do
     FAIL=1
   fi
 done
+
+# Staged secrets (PF-014): warn-only, never touches FAIL. Runs against the
+# real repo (ROOT, not $EXPORT) since `git diff --cached` needs an actual
+# .git to read from; the export above has none.
+# shellcheck source=../lib/secrets.sh
+. "$ROOT/os/scripts/lib/secrets.sh"
+secret_hits=$(staged_secret_hits)
+if [ -n "$secret_hits" ]; then
+  echo "pre-commit: WARN staged changes contain a common secret-shaped token (AWS key / private key header / Slack token) — verify nothing real is about to be committed:" >&2
+  printf '%s\n' "$secret_hits" | sed 's/^/  /' >&2
+fi
+
 [ "$FAIL" -eq 0 ] || exit 1

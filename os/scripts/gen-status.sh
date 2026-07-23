@@ -158,6 +158,9 @@ generate() {
 
   # -- Git -------------------------------------------------------------------
   printf '\n## Git\n\n'
+  printf -- '_Snapshot from the last regen, not live — branch/dirty/unpushed below are only\n'
+  printf -- 'as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)\n'
+  printf -- 'for the real-time state._\n\n'
   if git rev-parse --git-dir >/dev/null 2>&1; then
     branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="(no branch)"
     dirty=$(git status --porcelain -- ':(exclude)MAP.md' ':(exclude)STATUS.md' | wc -l)

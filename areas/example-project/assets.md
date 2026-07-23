@@ -4,10 +4,10 @@ Pointer page (law 4): these assets live outside git, and this page is their trac
 address. One page per collection, not one page per file.
 
 - **Home:** `~/BigFiles/example-project` — not in git (large, binary)
-- **Contents:**
-  - `raw/` — original captures, untouched
-  - `exports/` — final rendered files, one subfolder per delivery
-  - `scans/` — scanned paper notes, named `YYYY-MM-DD-topic.pdf`
+- **Contents** (illustrative names — call yours whatever fits the work):
+  - `originals/` — untouched source material, as first captured
+  - `processed/` — finished or derived output, one subfolder per delivery
+  - `notes/` — supporting notes captured alongside the work, named `YYYY-MM-DD-topic.pdf`
 - **Last verified:** 2026-07-18 — contents above checked against the folder by hand
 
 Rules:

@@ -61,9 +61,12 @@ fi
 # catches nothing sophisticated, and a determined leak still gets through —
 # just a tripwire before a commit ships something that belongs in .env or a
 # password manager instead (see README's "Data classification"). Warn-only:
-# never sets FAIL, never blocks a commit by itself.
-SECRET_PATTERN='AKIA[0-9A-Z]{16}|-----BEGIN[A-Z ]*PRIVATE KEY-----|xox[baprs]-[0-9A-Za-z-]{10,}'
-secret_hits=$(git diff --cached -U0 -- . 2>/dev/null | grep -E '^\+' | grep -vE '^\+\+\+' | grep -E "$SECRET_PATTERN" || true)
+# never sets FAIL, never blocks a commit by itself. Same check also runs in
+# os/scripts/hooks/pre-commit on every commit; both source
+# os/scripts/lib/secrets.sh so the pattern can't drift between the two.
+# shellcheck source=lib/secrets.sh
+. "$ROOT/os/scripts/lib/secrets.sh"
+secret_hits=$(staged_secret_hits)
 if [ -n "$secret_hits" ]; then
   echo "WARN: staged changes contain a common secret-shaped token (AWS key / private key header / Slack token) — verify nothing real is about to be committed:"
   printf '%s\n' "$secret_hits" | sed 's/^/  /'

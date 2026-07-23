@@ -1,5 +1,10 @@
 # Secrets: values live in .env; only names are committed, in .env.example.
-.env
+# .env* covers the whole dotenv family (.env.local, .env.production,
+# .env.development, .env.bak, etc.) — a bare `.env` line only ever matched
+# that one exact filename and silently let every variant through.
+# .env.example must stay tracked, so it is un-ignored right after.
+.env*
+!.env.example
 
 # macOS noise.
 .DS_Store
@@ -18,7 +23,13 @@ node_modules/
 *.pem
 *.key
 id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
 *credentials*.json
+*service-account*.json
+*-key.json
 .netrc
+.npmrc
 *.db
 *.sqlite

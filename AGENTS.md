@@ -3,6 +3,10 @@
 Identical rules for every agent, whichever tool you are (Claude, Codex/GPT, anything future).
 There is no separate rulebook.
 
+One term recurs everywhere below: **the owner** is the human running this repo — as
+opposed to you, the agent operating it. Every "the owner" in these docs means that person,
+never you.
+
 1. `git pull --ff-only` first — before reading `CLAUDE.md`, so the constitution you're about
    to read can't be stale (law 8). If a later pull in this session changes `CLAUDE.md`
    (e.g. during `/sync`), re-read it in full before continuing — "read once" means once per
