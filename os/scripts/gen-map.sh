@@ -5,11 +5,14 @@
 #        os/scripts/gen-map.sh --check  exit 1 (writing nothing) if MAP.md is stale
 #
 # A home's one-line description is the first non-empty line after the H1 in its
-# README.md — "(no README)" if the file is absent. Root files use their own H1.
+# README.md — "(no README)" if the file is absent. Root files use their own H1
+# (VERSION is the one exception — it has no H1, so its line is read directly).
 # archive/ is always a single line; areas/ also lists each area one level deep.
-# os/ lists its core kernel files (ledger, roadmap, routine, worklog, commands) —
-# law 1 says agents reach pages only through MAP, so the ledger law 2 elevates
-# above everything must be routable from here.
+# os/ lists its core kernel files (ledger, roadmap, routine, worklog, commands)
+# plus os/handoffs/ with a pointer to the latest handoff (PF-009) — law 1 says
+# agents reach pages only through MAP, so the ledger law 2 elevates above
+# everything, and the handoff chain a session needs to resume from, must both
+# be routable from here.
 # Output is deterministic (LC_ALL=C, stable glob order).
 # MAP.md is only ever written by this script (law 6).
 
@@ -67,13 +70,20 @@ generate() {
   printf '\n# MAP\n\n'
   printf '%s\n' 'One line per home. Route from here; never scan the repo for relevance (law 1).'
   printf '\n## Root files\n\n'
-  for f in AGENTS.md CLAUDE.md README.md; do
+  for f in AGENTS.md CLAUDE.md README.md CHANGELOG.md UPGRADING.md; do
     if [ -f "$f" ]; then
       t=$(file_h1 "$f")
       [ -n "$t" ] || t="(no title)"
       printf -- '- %s — %s\n' "$f" "$t"
     fi
   done
+  # VERSION has no H1 (it is a bare version string) — read it directly instead
+  # of routing it through file_h1 (PF-016).
+  if [ -f VERSION ]; then
+    v=$(head -n 1 VERSION | tr -d '[:space:]')
+    [ -n "$v" ] || v="(unknown)"
+    printf -- '- VERSION — current template version: %s\n' "$v"
+  fi
   printf '\n## Homes\n\n'
   for d in */; do
     [ -d "$d" ] || continue
@@ -97,6 +107,18 @@ generate() {
         [ -n "$kt" ] || kt="(no title)"
         printf -- '  - %s — %s\n' "$kf" "$kt"
       done
+      # os/handoffs/ is a home in its own right (the session handoff chain) —
+      # list it with a pointer to the latest entry so law 1 can reach it
+      # without scanning (PF-009). Filenames are YYYY-MM-DD-HHMMSS-topic.md,
+      # so a plain sort orders them chronologically; last line is newest.
+      if [ -d os/handoffs ]; then
+        latest=$(find os/handoffs -maxdepth 1 -type f -name '*.md' ! -name 'README.md' 2>/dev/null | sort | tail -n 1)
+        if [ -n "$latest" ]; then
+          printf -- '  - os/handoffs/ — session handoff chain (latest: %s)\n' "$latest"
+        else
+          printf -- '  - os/handoffs/ — session handoff chain (latest: none yet)\n'
+        fi
+      fi
     fi
   done
 }

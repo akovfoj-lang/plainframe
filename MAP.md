@@ -9,6 +9,9 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
 - AGENTS.md — AGENTS.md — start here
 - CLAUDE.md — CLAUDE.md — the constitution
 - README.md — Plainframe
+- CHANGELOG.md — Changelog
+- UPGRADING.md — Upgrading
+- VERSION — current template version: 1.0.0
 
 ## Homes
 
@@ -24,3 +27,4 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
   - os/roadmap.md — Roadmap
   - os/routine.md — Routine
   - os/worklog.md — Worklog
+  - os/handoffs/ — session handoff chain (latest: none yet)

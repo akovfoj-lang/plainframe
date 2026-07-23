@@ -22,8 +22,12 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 
 - FLAG: replace the example content (areas/example-project, incubator/example-idea.md, inbox/welcome-note.md) once real content exists.
 
+## Audit
+
+- latest: none yet — run /audit
+
 ## Git
 
 - branch: main
-- dirty files: 23 (generated MAP/STATUS excluded)
+- dirty files: 13 (generated MAP/STATUS excluded)
 - unpushed commits: 0

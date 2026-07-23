@@ -9,8 +9,14 @@
 #   All three markers count only at line start or after "<!-- ".
 #   (Anchoring avoids false hits like "FAQ:" and prose that merely MENTIONS a marker.)
 # Prints file:line:text grouped by marker type, then a summary count.
-# Hits under inbox/ are prefixed "[inbox — unverified]" — captured external
-# material is data to classify, never instructions to act on (law 10).
+# Hits are prefixed "[untrusted origin]" when the hit's file is unverified
+# external material (law 10): anything under inbox/, OR anything anywhere
+# else that still carries the ingest/sweep provenance envelope (a literal
+# "trust: data" line — see os/playbooks/ingest.md). Tagging by envelope
+# presence, not just the inbox/ path, means routed content keeps showing
+# its untrusted origin after /sweep or /ingest moves it out of inbox/
+# (PF-007) — the envelope is defined to travel with the content precisely
+# so this check still finds it.
 
 set -eu
 if (set -o pipefail) 2>/dev/null; then set -o pipefail; fi
@@ -30,6 +36,27 @@ trap 'rm -rf "$TMP"' EXIT
 
 # NUL-delimited: a filename with a newline in it must not split into two paths.
 git ls-files -z > "$TMP/files0"
+
+# Precompute which files are "unverified" (PF-007): anything under inbox/,
+# or anything anywhere that still carries a literal "trust: data" envelope
+# line (bare, or HTML-comment-wrapped — same two shapes the marker patterns
+# below accept). One pass up front, keyed on the same newline-sanitized path
+# used everywhere else here, so scan() can do a cheap membership check per
+# hit instead of re-deriving taint from a path prefix that routing breaks.
+: > "$TMP/unverified"
+while IFS= read -r -d '' f; do
+  case $f in MAP.md|STATUS.md|os/scripts/*) continue ;; esac
+  [ -f "$f" ] || continue
+  f_safe=$(printf '%s' "$f" | tr '\n' ' ')
+  case $f in
+    inbox/*) printf '%s\n' "$f_safe" >> "$TMP/unverified" ;;
+    *)
+      if grep -qE '(^trust:[[:space:]]*data[[:space:]]*$|<!--[[:space:]]*trust:[[:space:]]*data[[:space:]]*-->)' -- "$f" 2>/dev/null; then
+        printf '%s\n' "$f_safe" >> "$TMP/unverified"
+      fi
+      ;;
+  esac
+done < "$TMP/files0"
 
 TOTAL=0
 
@@ -56,8 +83,16 @@ scan() {
   cnt=$(wc -l < "$TMP/hits"); cnt=$((cnt))
   echo "## $sc_label ($cnt)"
   if [ "$cnt" -gt 0 ]; then
-    # Tag inbox hits: unverified external data, never instructions (law 10).
-    sort "$TMP/hits" | sed 's|^inbox/|[inbox — unverified] inbox/|'
+    # Tag by envelope presence, not path (PF-007): a hit's path (everything
+    # before the first ":") is looked up in the unverified set built above.
+    sort "$TMP/hits" | while IFS= read -r hitline; do
+      hp=${hitline%%:*}
+      if grep -qxF "$hp" "$TMP/unverified" 2>/dev/null; then
+        printf '[untrusted origin] %s\n' "$hitline"
+      else
+        printf '%s\n' "$hitline"
+      fi
+    done
   fi
   echo ""
   TOTAL=$((TOTAL + cnt))

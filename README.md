@@ -131,6 +131,30 @@ constant; the operator is replaceable.
 
 ---
 
+## Data classification
+
+Plainframe is a git repo, and git repos are bad at forgetting — even a later commit that
+deletes a file leaves it recoverable in history. Know what belongs in yours before it goes
+in:
+
+- **Never commit:** passwords, API keys, tokens, session cookies, private key files.
+  Names go in `.env.example` (committed); values go in `.env` (gitignored) and your
+  password manager only — never in a tracked file or in chat (Never-tier, law 7).
+- **Think twice:** anything regulated (health records, financial account numbers,
+  government IDs) or anything you would not want readable by everyone who ever gets repo
+  access — a future collaborator, a leaked clone, a misconfigured visibility setting.
+  **A private repo is not a vault.** "Private" means fewer people can see it today; it is
+  still a full, ordinary copy of your data on a third party's servers with no encryption,
+  access logging, or retention control beyond what plain git and your host provide. Content
+  that genuinely needs those properties belongs in a system built for them, with a tracked
+  pointer page here instead (law 4) — not in the repo itself.
+- **Mechanical backstop, not a guarantee:** `os/scripts/doctor.sh` greps staged changes for
+  a few common secret shapes (AWS-style keys, PEM private-key headers, Slack tokens) and
+  warns. It is a cheap tripwire, not a scanner — it catches nothing sophisticated and is
+  never a substitute for not committing the thing in the first place.
+
+---
+
 ## FAQ
 
 **Is this public or private?**
@@ -145,8 +169,18 @@ work in sight-unseen: a dirty satellite is listed and skipped until the commit m
 `SATELLITE-CONFIRMED` as its own line — reviewed, not assumed.
 
 **Does this work for a team?**
-Yes. It's a git repo — branch, review, and merge as usual. The autonomy table and the ship
-gate keep every operator, human or agent, inside the same guardrails.
+Partly, and only as far as plain git gets you. It's a normal repo — branch, open a PR,
+review, and merge like any other; the autonomy table and the ship gate constrain every
+operator, human or agent, the same way regardless of who they are. Worklog receipts and
+ledger entries can carry an optional `actor:` / `Actor:` field so entries are attributable
+to whoever (or whichever agent) wrote them.
+
+What it is **not**: there is no file locking, no entry ownership, and no concurrent-edit
+protection. Two people — or an owner and an agent — editing the same page at the same time
+can still clash, exactly like any other git repo with no extra tooling layered on. If real
+multi-user coordination matters to you (assigning pages, preventing simultaneous edits),
+that is outside what a plain-text repo does on its own; branch discipline is the mitigation,
+not a guarantee.
 
 **What if I stop using a given agent?**
 Nothing breaks. The kernel is plain markdown and shell. Delete that agent's adapter folder,
@@ -158,7 +192,18 @@ can read it without an integration. An app would lock your operating system insi
 
 **Where do secrets go?**
 Names in `.env.example` (committed), values in `.env` (gitignored) and your password manager.
-Printing a secret value into a file or the chat is a Never-tier action.
+Printing a secret value into a file or the chat is a Never-tier action. See
+[Data classification](#data-classification) above for the fuller picture — including why a
+private repo isn't a vault for anything beyond that.
+
+---
+
+## Versioning
+
+This template is versioned. [VERSION](VERSION) holds the current release,
+[CHANGELOG.md](CHANGELOG.md) lists what changed and when, and
+[UPGRADING.md](UPGRADING.md) covers pulling template updates into a private clone that has
+already diverged with your own content.
 
 ---
 

@@ -14,6 +14,11 @@ what tradeoff it accepts>
 
 **Alternatives considered:** <what else was on the table, and why it lost, one line each>
 
+**Actor:** <optional — who drafted this entry: an agent/session name, or "owner" if the
+owner wrote it directly. Pure attribution; delete the line entirely if it doesn't matter
+to you. It never substitutes for the owner's in-session confirmation law 2 requires for
+Status: confirmed.>
+
 **Supersedes:** <date + title of the entry this replaces, or: none>
 
 **Status:** confirmed <or: draft — void until the owner confirms in-session, per law 2>
@@ -26,5 +31,7 @@ Rules for filling it in:
   The newest dated entry wins; history stays intact.
 - `Supersedes:` is the explicit precedence edge — and the tiebreaker when two entries
   carry the same date, which date alone cannot order.
+- `Actor:` is optional and purely for attribution (PF-012) — omit it on a single-operator
+  repo; add it the moment more than one person or agent starts writing entries here.
 - A decision an agent appended but the owner never confirmed is void (law 2). Mark it
   `Status: draft` until confirmed, and don't treat draft entries as binding.

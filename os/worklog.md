@@ -10,8 +10,11 @@ check first — never assumed complete from memory.
 Keep each receipt short: one line per unit of work, newest at the bottom.
 
 Format: `YYYY-MM-DD <command-or-topic>: <one-line summary>` — optionally append
-` [evidence: <commit-hash-or-file-path>]` when a receipt can point at exact proof.
-Receipts stay the ledger of record either way; evidence is a pointer, not a replacement.
+` [actor: <name-or-session-id>]` to attribute the entry (useful the moment more than one
+person or agent writes to this repo — see README's "Does this work for a team?"), and/or
+` [evidence: <commit-hash-or-file-path>]` when a receipt can point at exact proof. Neither
+tag is required, and order between them doesn't matter. Receipts stay the ledger of record
+either way; actor and evidence are pointers, not a replacement.
 
 ## Archived epochs
 

@@ -7,6 +7,7 @@
 # Reports: last 10 worklog receipts · inbox count + oldest item age (days) ·
 # incubator counts by "status:" line · open flags (FLAG: lines in os/roadmap.md,
 # plus any decisions.md entry still "**Status:** draft" — void until confirmed, law 2) ·
+# latest /audit report + its 🔴/🟡 flag counts, if any report exists (PF-009) ·
 # git state (branch, dirty file count, unpushed commit count).
 # The dirty count excludes generated MAP.md/STATUS.md — counting the file this
 # script is about to write would make --check permanently unstable.
@@ -134,6 +135,25 @@ generate() {
     sed 's/^/- /' "$TMP/flags"
   else
     printf -- '- (none)\n'
+  fi
+
+  # -- Audit -------------------------------------------------------------------
+  # Surfaces the latest /audit report and its flag counts (PF-009) — an audit
+  # report is content in the tree (archive/audit-YYYY-MM-DD.md), not a git or
+  # filesystem-timing fact, so unlike the Git section below this needs no
+  # exclusion from --check: it is exactly as stable as any other tracked file.
+  printf '\n## Audit\n\n'
+  latest_audit=""
+  if [ -d archive ]; then
+    latest_audit=$(find archive -maxdepth 1 -type f -name 'audit-*.md' 2>/dev/null | sort | tail -n 1)
+  fi
+  if [ -n "$latest_audit" ]; then
+    red=$(grep -cF '🔴' "$latest_audit" 2>/dev/null || true); red=$((red))
+    yellow=$(grep -cF '🟡' "$latest_audit" 2>/dev/null || true); yellow=$((yellow))
+    printf -- '- latest: %s\n' "$latest_audit"
+    printf -- '- flags: %s red, %s yellow\n' "$red" "$yellow"
+  else
+    printf -- '- latest: none yet — run /audit\n'
   fi
 
   # -- Git -------------------------------------------------------------------
