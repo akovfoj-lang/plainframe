@@ -2,6 +2,10 @@
 # os/scripts/gen-commands.sh emits native adapters from this file.
 # Format: one `## <name>` block per command with exactly two fields.
 
+## onboard
+- desc: Configure a fresh clone into the owner's own instance.
+- playbook: os/playbooks/onboard.md
+
 ## sweep
 - desc: Drain the inbox: classify, route, receipt.
 - playbook: os/playbooks/sweep.md

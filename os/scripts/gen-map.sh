@@ -7,6 +7,9 @@
 # A home's one-line description is the first non-empty line after the H1 in its
 # README.md — "(no README)" if the file is absent. Root files use their own H1
 # (VERSION is the one exception — it has no H1, so its line is read directly).
+# profile.md is a root file too, listed right after CLAUDE.md when it exists —
+# a fresh clone has none until /onboard runs (os/playbooks/onboard.md); the same
+# existence check that skips any other absent root file skips it too.
 # archive/ is always a single line; areas/ also lists each area one level deep.
 # os/ lists its core kernel files (ledger, roadmap, routine, worklog, commands)
 # plus os/handoffs/ with a pointer to the latest handoff (PF-009) — law 1 says
@@ -70,7 +73,7 @@ generate() {
   printf '\n# MAP\n\n'
   printf '%s\n' 'One line per home. Route from here; never scan the repo for relevance (law 1).'
   printf '\n## Root files\n\n'
-  for f in AGENTS.md CLAUDE.md README.md CHANGELOG.md UPGRADING.md; do
+  for f in AGENTS.md CLAUDE.md profile.md README.md CHANGELOG.md UPGRADING.md; do
     if [ -f "$f" ]; then
       t=$(file_h1 "$f")
       [ -n "$t" ] || t="(no title)"

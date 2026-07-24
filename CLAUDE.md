@@ -110,6 +110,8 @@ wrong — never a routine way around a block.
 
 ## Where the rest lives
 
+- Configure this clone into your instance: `os/playbooks/onboard.md` (run `/onboard`) —
+  first thing in a fresh clone.
 - Full orientation for a human: `os/playbooks/guide.md` (run `/guide`).
-- The six commands and their playbooks: `os/commands.md`.
+- The seven commands and their playbooks: `os/commands.md`.
 - Non-Claude agents enter through `AGENTS.md`; the rules there are identical to these.

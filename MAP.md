@@ -11,7 +11,7 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
 - README.md — Plainframe
 - CHANGELOG.md — Changelog
 - UPGRADING.md — Upgrading
-- VERSION — current template version: 1.0.0
+- VERSION — current template version: 1.1.0
 
 ## Homes
 

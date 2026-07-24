@@ -9,6 +9,27 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.1.0] — 2026-07-24
+
+### Added
+
+- **`/onboard`, the seventh command** — a resumable, idempotent setup interview
+  (`os/playbooks/onboard.md`) that configures a fresh clone into the owner's own instance:
+  asks what the OS is for and who the owner is, scaffolds `areas/<slug>/README.md` for each
+  area named, seeds `os/roadmap.md`'s priorities, records reachable systems in
+  `os/integrations/README.md`, and writes `profile.md` from the new
+  `_templates/profile.md`. Cross-linked with `/guide` (`/guide` explains the system and
+  reads nothing back; `/onboard` configures it and leaves a receipt).
+- **`_templates/profile.md`** — the template `/onboard` writes `profile.md` from; not
+  itself shipped, since a fresh clone has no `profile.md` until `/onboard` runs.
+- **`profile.md` routed in `MAP.md`** — `os/scripts/gen-map.sh`'s root-files loop lists it
+  right after `CLAUDE.md` once it exists (law 1); absent on a fresh clone, it is skipped
+  like any other missing root file.
+- **Reachability folded into the integrations registry** — `os/integrations/README.md` now
+  tracks how each Live tool and Candidate is reached (MCP / API / CLI / manual), and gained
+  a "Manual channels" section for systems with no API at all.
+  `os/playbooks/add-integration.md` updated to match.
+
 ## [1.0.0] — 2026-07-22
 
 ### Hardening — external adversarial review
