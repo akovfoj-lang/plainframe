@@ -113,5 +113,6 @@ wrong — never a routine way around a block.
 - Configure this clone into your instance: `os/playbooks/onboard.md` (run `/onboard`) —
   first thing in a fresh clone.
 - Full orientation for a human: `os/playbooks/guide.md` (run `/guide`).
-- The seven commands and their playbooks: `os/commands.md`.
+- The eight commands and their playbooks: `os/commands.md`.
+- `/level-up` — weekly 3Ms interview that ships one automation: `os/playbooks/level-up.md`.
 - Non-Claude agents enter through `AGENTS.md`; the rules there are identical to these.

@@ -6,6 +6,7 @@ The rhythm. The commands are cheap; the habit is the system.
 |---------|----|---------|
 | Daily-ish | Drain the inbox while it's small | /sweep |
 | Weekly | Persist everything: pull → commit → push | /sync |
+| Weekly (Fri) | 3Ms interview — find and ship one automation | /level-up |
 | Monthly | Health report — staleness, drift, flags | /audit |
 
 Session bookends, every time:

@@ -10,9 +10,11 @@
 # profile.md is a root file too, listed right after CLAUDE.md when it exists —
 # a fresh clone has none until /onboard runs (os/playbooks/onboard.md); the same
 # existence check that skips any other absent root file skips it too.
+# THIRD-PARTY-NOTICES.md is listed after UPGRADING.md, same existence-checked
+# treatment as any other root file — present once third-party content ships.
 # archive/ is always a single line; areas/ also lists each area one level deep.
-# os/ lists its core kernel files (ledger, roadmap, routine, worklog, commands)
-# plus os/handoffs/ with a pointer to the latest handoff (PF-009) — law 1 says
+# os/ lists its core kernel files (ledger, roadmap, routine, worklog, commands,
+# integrations) plus os/handoffs/ with a pointer to the latest handoff (PF-009) — law 1 says
 # agents reach pages only through MAP, so the ledger law 2 elevates above
 # everything, and the handoff chain a session needs to resume from, must both
 # be routable from here.
@@ -73,7 +75,7 @@ generate() {
   printf '\n# MAP\n\n'
   printf '%s\n' 'One line per home. Route from here; never scan the repo for relevance (law 1).'
   printf '\n## Root files\n\n'
-  for f in AGENTS.md CLAUDE.md profile.md README.md CHANGELOG.md UPGRADING.md; do
+  for f in AGENTS.md CLAUDE.md profile.md README.md CHANGELOG.md UPGRADING.md THIRD-PARTY-NOTICES.md; do
     if [ -f "$f" ]; then
       t=$(file_h1 "$f")
       [ -n "$t" ] || t="(no title)"
@@ -104,7 +106,7 @@ generate() {
     fi
     # os/ lists the kernel core files so law 1 can actually reach them.
     if [ "$d" = "os" ]; then
-      for kf in os/commands.md os/decisions.md os/roadmap.md os/routine.md os/worklog.md; do
+      for kf in os/commands.md os/decisions.md os/roadmap.md os/routine.md os/worklog.md os/integrations/README.md; do
         [ -f "$kf" ] || continue
         kt=$(file_h1 "$kf")
         [ -n "$kt" ] || kt="(no title)"

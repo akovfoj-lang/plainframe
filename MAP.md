@@ -11,7 +11,8 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
 - README.md — Plainframe
 - CHANGELOG.md — Changelog
 - UPGRADING.md — Upgrading
-- VERSION — current template version: 1.1.0
+- THIRD-PARTY-NOTICES.md — Third-party notices
+- VERSION — current template version: 1.2.0
 
 ## Homes
 
@@ -27,4 +28,6 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
   - os/roadmap.md — Roadmap
   - os/routine.md — Routine
   - os/worklog.md — Worklog
+  - os/integrations/README.md — Integrations
   - os/handoffs/ — session handoff chain (latest: none yet)
+- references/ — Third-party reference material shipped with attribution, not Plainframe's own laws.

@@ -9,6 +9,41 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.2.0] — 2026-07-24
+
+### Added
+
+- **`/level-up`, the eighth command** — a weekly (Friday) 3Ms interview — Mindset (find
+  the candidate) → Method (scope one) → Machine (build it) — that ships one automation
+  per run (`os/playbooks/level-up.md`). This is third-party content from
+  [AIS-OS](https://github.com/nateherkai/AIS-OS) (MIT, © 2026 Nate Herk), shipped
+  verbatim on the owner's explicit choice, attribution intact — the two attribution
+  blockquotes, the closing trademark line, and the `three-ms-attribution` scaffolding
+  block all survive unedited. The complete list of changes, and nothing else:
+  (1) the upstream YAML frontmatter replaced by an `# Level up` H1 plus a provenance
+  note; (2) six input paths remapped to Plainframe's homes — `context/priorities.md` →
+  `os/roadmap.md`, `context/about-me.md` → `profile.md`, `connections.md` →
+  `os/integrations/README.md`, `decisions/log.md` → `os/decisions.md`,
+  `.claude/skills/*/SKILL.md` → `.agents/skills/*/SKILL.md`, and
+  `audits/audit-{date}.md` → `archive/audit-YYYY-MM-DD.md`
+  (`references/3ms-framework.md` needed no remap — that path is correct here too);
+  (3) every ledger write reworded to append as `**Status:** draft` for the owner to
+  confirm (`os/decisions.md` is a protected, byte-exact append-only ledger — law 2);
+  (4) the `profile.md` input marked "if present", since a clone has none until
+  `/onboard` runs; (5) the scaffolded-artifact location made explicit as
+  `.agents/skills/<name>/SKILL.md`, noting PF-017 leaves unmarked user files untouched
+  through regeneration; and (6) a closing receipt line (law 9). No prose, heading,
+  question, table row, or section of the upstream text was altered or removed.
+- **`references/3ms-framework.md`** — the Three Ms of AI™ framework doc `/level-up`
+  reads to quote principles back, copied byte-for-byte from AIS-OS with no edits at all.
+- **`references/`** — a new top-level home for third-party reference material, with its
+  own `README.md` and routed in `MAP.md`.
+- **`THIRD-PARTY-NOTICES.md`** — what was taken from AIS-OS, where from, and the
+  complete upstream MIT licence text verbatim, including the reserved "Three Ms of AI™"
+  trademark notice. Routed in `MAP.md` right after `UPGRADING.md`.
+- **`os/routine.md`** gained a weekly (Friday) row for `/level-up`, alongside the
+  existing daily-ish/weekly/monthly rhythm.
+
 ## [1.1.0] — 2026-07-24
 
 ### Added

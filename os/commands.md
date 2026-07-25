@@ -29,3 +29,7 @@
 ## guide
 - desc: Explain this repo to a human or agent.
 - playbook: os/playbooks/guide.md
+
+## level-up
+- desc: Weekly 3Ms interview — Mindset, Method, Machine — that ships one automation.
+- playbook: os/playbooks/level-up.md
