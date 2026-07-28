@@ -21,7 +21,7 @@ flowchart TD
 
     capture["Capture · inbox/ + EDIT / Q / IDEA markers"]
     sweep["/sweep · classify and route"]
-    homes["Homes · areas/ + incubator/"]
+    homes["Homes · areas/ + incubator/ + workspace/ + answers/"]
     work["Work happens"]
     receipts["Receipts · os/worklog.md"]
     generators["Generators · MAP.md + STATUS.md"]

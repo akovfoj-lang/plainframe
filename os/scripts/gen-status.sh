@@ -5,7 +5,8 @@
 #        os/scripts/gen-status.sh --check  exit 1 (writing nothing) if STATUS.md is stale
 #
 # Reports: last 10 worklog receipts · inbox count + oldest item age (days) ·
-# incubator counts by "status:" line · open flags (FLAG: lines in os/roadmap.md,
+# incubator counts by "status:" line · workspace counts by "status:" line ·
+# answers count · open flags (FLAG: lines in os/roadmap.md,
 # plus any decisions.md entry still "**Status:** draft" — void until confirmed, law 2) ·
 # latest /audit report + its 🔴/🟡 flag counts, if any report exists (PF-009) ·
 # git state (branch, dirty file count, unpushed commit count).
@@ -113,6 +114,40 @@ generate() {
     sort "$TMP/statuses" | uniq -c \
       | awk '{ c = $1; $1 = ""; sub(/^ /, ""); printf "- %s: %d\n", $0, c }'
   fi
+
+  # -- Workspace -------------------------------------------------------------
+  printf '\n## Workspace\n\n'
+  # Same NUL-delimited discipline as Incubator above, and for the same reason
+  # (PF-020): a filename with an embedded newline must stay one record.
+  : > "$TMP/wsp0"
+  if [ -d workspace ]; then
+    find workspace -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0 \
+      | sort -z > "$TMP/wsp0"
+  fi
+  nw=0
+  while IFS= read -r -d '' _f; do nw=$((nw + 1)); done < "$TMP/wsp0"
+  printf -- '- items: %s\n' "$nw"
+  if [ "$nw" -gt 0 ]; then
+    : > "$TMP/wstatuses"
+    while IFS= read -r -d '' f; do
+      s=$(awk 'sub(/^status:[[:space:]]*/, "") { sub(/[[:space:]]+$/, ""); print; exit }' "$f")
+      [ -n "$s" ] || s="(no status)"
+      printf '%s\n' "$s" >> "$TMP/wstatuses"
+    done < "$TMP/wsp0"
+    sort "$TMP/wstatuses" | uniq -c \
+      | awk '{ c = $1; $1 = ""; sub(/^ /, ""); printf "- %s: %d\n", $0, c }'
+  fi
+
+  # -- Answers ---------------------------------------------------------------
+  printf '\n## Answers\n\n'
+  na=0
+  if [ -d answers ]; then
+    : > "$TMP/ans0"
+    find answers -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0 \
+      | sort -z > "$TMP/ans0"
+    while IFS= read -r -d '' _f; do na=$((na + 1)); done < "$TMP/ans0"
+  fi
+  printf -- '- items: %s\n' "$na"
 
   # -- Open flags ------------------------------------------------------------
   printf '\n## Open flags\n\n'

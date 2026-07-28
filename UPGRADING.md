@@ -27,7 +27,8 @@ git remote add template https://github.com/akovfoj-lang/plainframe.git
      `CLAUDE.md`, `AGENTS.md`, `os/commands.md`. These are meant to converge with
      upstream: unless you deliberately customized the file, prefer the template's side.
      If you did customize it, reconcile by hand and keep your customization.
-   - **Your content** — `areas/`, `incubator/`, `os/decisions.md`, `os/worklog.md`,
+   - **Your content** — `areas/`, `incubator/`, `workspace/`, `answers/`,
+     `os/decisions.md`, `os/worklog.md`,
      `inbox/`, `archive/`, `os/handoffs/`, `os/satellites.txt`, `.env.example`. Nothing
      here ships from the template's side (it has no idea what your areas or decisions
      are), so a conflict here means a template update touched a line you also touched —

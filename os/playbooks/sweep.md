@@ -23,6 +23,13 @@ Two beats: PLAN first, APPLY only after the plan is clear. Never jump straight t
 5. Propose a destination for each piece:
    - facts → the owning area page (`areas/<name>/`)
    - ideas → a new seed in `incubator/`
+   - open questions the owner is weighing → a note in `workspace/` (`status: open`) — a
+     question is only ready for `workspace/` if you can name what would settle it;
+     if you can't, it is a fact or an idea, or it goes back as a question to the owner
+   - looked-up facts worth keeping → an entry in `answers/`, carrying its source, the date
+     checked, and the condition that makes it stale. An answer is never a decision: if
+     looking it up settled a call, the call goes to `os/decisions.md` and links to the
+     answer (law 3)
    - assets that live outside git → a pointer page in the home that owns them (law 4)
    - sensitive originals → move outside git first, leave a pointer behind
    - anything unclear → a one-line question to the owner — never guess

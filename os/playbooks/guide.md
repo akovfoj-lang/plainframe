@@ -3,7 +3,8 @@
 Give a human or an agent the friendly tour, from zero.
 
 1. Start with the read path: AGENTS.md → CLAUDE.md → MAP.md. That is the whole onboarding — three short files, then MAP routes you to everything else (law 1). Never scan the repo instead.
-2. Show the shape: `os/` is the kernel (laws, ledger, playbooks, scripts); `areas/` is the owner's actual life and work; `inbox/` is the dump zone; `incubator/` grows ideas; `archive/` is where things rest.
+2. Show the shape: `os/` is the kernel (laws, ledger, playbooks, scripts); `areas/` is the owner's actual life and work; `inbox/` is the dump zone; `incubator/` grows ideas; `workspace/` holds questions still being decided; `answers/` keeps looked-up facts so nothing is researched twice; `archive/` is where things rest.
+   The four capture homes are one pipeline, not four piles: `inbox/` is unsorted, `incubator/` is "might become something", `workspace/` is "I am deciding this now", `os/decisions.md` is "decided". A thing moves right as it firms up, and `answers/` sits beside them holding the facts those decisions lean on.
 3. Walk the loop: capture lands in `inbox/` → /sweep routes it → work happens in areas → receipts land in `os/worklog.md` → generators rebuild MAP.md and STATUS.md → the next session reads its way back in. /sync keeps everything pushed; drift-alert watches from outside.
 4. Walk the eight commands in `os/commands.md`: onboard, sweep, sync, audit, ingest, handoff, guide, level-up. Each is a thin adapter over one playbook in `os/playbooks/` — the playbook is the truth.
 5. Sketch the first week: day one, add an area and drop notes into `inbox/` as they come; run /sweep once a few items pile up; /sync at every session end; put /audit on the monthly line of `os/routine.md`.

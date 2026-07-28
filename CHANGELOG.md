@@ -9,6 +9,48 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.3.0] — 2026-07-27
+
+### Added
+
+- **`workspace/` — the missing middle of the capture pipeline.** One file per question the
+  owner is actively deciding, carrying `status: open | settled`. Plainframe already had
+  `inbox/` (unsorted), `incubator/` (might become something) and `os/decisions.md`
+  (decided), but nothing held a question mid-argument — so those questions lived in chat
+  and died there, and the reasoning behind a ledger entry was never written down anywhere.
+  A note lists the options with what each costs and buys, where the thinking currently
+  leans, and — the load-bearing field — **what would settle it**. A question that cannot
+  name what would settle it is not ready for `workspace/`; that test is what stops the
+  folder becoming a second inbox. When settled, the call is appended to `os/decisions.md`
+  as a draft (law 2) and the note moves to `archive/`, so the thinking stays readable while
+  the decision keeps one home (law 3). Shape in `_templates/workspace-note.md`.
+
+- **`answers/` — questions looked up once, kept honestly.** One file per researched
+  question, phrased as a question, with a short answer capped at three sentences (if it
+  needs more, it was two questions). Every entry carries `**Checked:**` and
+  `**Re-check when:**` — an answer with no expiry is a claim pretending to be a fact.
+  Distinct from `references/`, which holds third-party documents shipped intact; this is
+  the owner's own answer in their own words. Distinct from `os/decisions.md`, which records
+  what was *chosen* rather than what is *true* — an answer that settled a call links to the
+  ledger entry rather than restating it (law 3). Answers arrive from outside, so law 10
+  applies: record what a source said, never adopt what it told you to do. Shape in
+  `_templates/answer.md`.
+
+### Changed
+
+- `os/scripts/gen-status.sh` reports both new homes: `## Workspace` counts notes by
+  `status:` line exactly as `## Incubator` does, and `## Answers` reports a item count.
+  Both use the same NUL-delimited enumeration as the incubator block (PF-020), so a
+  filename containing a newline stays one record. Neither count is volatile, so `--check`
+  stays stable.
+- `os/playbooks/sweep.md` routes two further destinations: open questions to `workspace/`,
+  looked-up facts to `answers/` — each with the test that keeps items out of the wrong
+  home.
+- `os/playbooks/guide.md` describes the four capture homes as one pipeline that moves left
+  to right as a thing firms up, rather than as four independent piles.
+- `README.md`'s loop diagram and `UPGRADING.md`'s "your content" conflict class both name
+  the new homes.
+
 ## [1.2.0] — 2026-07-24
 
 ### Added
