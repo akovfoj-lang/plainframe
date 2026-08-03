@@ -15,6 +15,11 @@
 # Works fine with Obsidian — just keep its plugins and workspace state out of git.
 .obsidian/
 
+# Obsidian's "Move to Obsidian trash" writes deleted notes here, markers and all.
+# os/scripts/markers.sh scans uncommitted files (PF-021), so without this a note
+# you deleted keeps surfacing its EDIT:/Q:/IDEA: lines on every /sweep.
+.trash/
+
 # Satellites own code, but just in case something gets installed here.
 node_modules/
 

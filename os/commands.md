@@ -7,7 +7,7 @@
 - playbook: os/playbooks/onboard.md
 
 ## sweep
-- desc: Drain the inbox: classify, route, receipt.
+- desc: Drain the inbox and resolve EDIT:/Q:/IDEA: markers, then report what needs you.
 - playbook: os/playbooks/sweep.md
 
 ## sync

@@ -1,5 +1,5 @@
 ---
-description: Drain the inbox: classify, route, receipt.
+description: Drain the inbox and resolve EDIT:/Q:/IDEA: markers, then report what needs you.
 ---
 
 Follow the playbook at os/playbooks/sweep.md. It is the single source of truth for this procedure.

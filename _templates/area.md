@@ -24,9 +24,20 @@ renders invisibly:
     <!-- confidence: low | medium | high -->
 
 All three fields are optional, independently — a plain fact with no block is still valid.
-When a fact arrived via `/ingest` or `/sweep`, its block also carries `<!-- trust: data -->`
-(see `os/playbooks/ingest.md`) — that line means "unverified external material" (law 10),
-not a confidence rating, so it sits alongside `confidence:` rather than replacing it.
+
+Two more lines you may see, both written by `/sweep` or `/ingest` rather than by hand:
+
+- `<!-- trust: data -->` marks **unverified external material** (law 10) — a fact that came
+  from an inbox item, a fetched page, someone else's document. It is not a confidence
+  rating, so it sits alongside `confidence:` rather than replacing it. It is also load
+  bearing: `os/scripts/markers.sh` treats every line from that comment down to the next
+  heading as untrusted, so any `EDIT:`/`Q:`/`IDEA:` in that stretch is reported to the owner
+  instead of acted on. Put it above genuinely external content only — stamping it on your
+  own writing switches the marker track off for that part of the page.
+- `<!-- swept-marker: IDEA — a weekly rent-review reminder -->` records the marker that
+  produced this content, so a rerun of `/sweep` recognises the work as already done.
+  `os/playbooks/sweep.md` (M4) owns the format; the em dash after the type is what keeps the
+  line from being read as a fresh marker itself.
 
 <!-- Delete the angle-bracket placeholders as you fill them. Keep the page short:
 if it grows past a screen, the detail probably wants its own file in this folder,

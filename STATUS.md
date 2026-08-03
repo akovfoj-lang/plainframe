@@ -11,7 +11,7 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 ## Inbox
 
 - items: 1
-- oldest: 7 day(s)
+- oldest: 14 day(s)
 
 ## Incubator
 

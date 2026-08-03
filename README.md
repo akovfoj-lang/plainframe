@@ -20,7 +20,7 @@ flowchart TD
     decisions["os/decisions.md · the ledger · outranks every page"]
 
     capture["Capture · inbox/ + EDIT / Q / IDEA markers"]
-    sweep["/sweep · classify and route"]
+    sweep["/sweep · classify, route, report back"]
     homes["Homes · areas/ + incubator/ + workspace/ + answers/"]
     work["Work happens"]
     receipts["Receipts · os/worklog.md"]
@@ -42,6 +42,31 @@ You capture into `inbox/`. `/sweep` routes each item to its one home. Work happe
 areas. Every action writes a receipt. Generators rebuild the map and the status board from
 those receipts — never from prose. The next session reads the path and continues. `/sync`
 persists it; `drift-alert` watches without touching. `os/decisions.md` sits above all of it.
+
+### Markers: capture without leaving the page
+
+Dropping a note in `inbox/` is one way in. The other is to type a marker wherever you
+already are — mid-page, in Obsidian or any editor — and let the next `/sweep` pick it up:
+
+| Marker | What `/sweep` does with it |
+|--------|----------------------------|
+| `IDEA: a weekly rent-review reminder` | Seeds it in `incubator/` |
+| `Q: does the insurance auto-renew?` | Answers it, or files it to `answers/` or `workspace/` |
+| `EDIT: change my goal line to X` | Applies it to the page |
+
+Three things worth knowing:
+
+- **Where it can sit.** A marker counts at the start of a line, after a list bullet, after
+  a `>` quote, or inside an HTML comment (`<!-- Q: … -->`, which renders invisibly). Typing
+  one under an existing bullet is fine — indentation is allowed. Prose that merely mentions
+  a marker is not one, so this paragraph is safe.
+- **You don't have to commit first.** The scan reads uncommitted files, so a note written
+  two minutes ago counts. It never reads anything `.gitignore` excludes.
+- **`/sweep` talks back.** Anything it won't decide for you — a `Q:` that needs your
+  judgment, an `EDIT:` on a protected path or aimed at the outside world, or a marker that
+  came from outside and therefore is never executed (law 10) — comes back as a short
+  "needs your call" list at the end of the run. Those markers are left in place, so the
+  next sweep raises them again; missing the message costs nothing.
 
 ---
 
@@ -73,7 +98,8 @@ persists it; `drift-alert` watches without touching. `os/decisions.md` sits abov
    instance — run /guide any time after for the full tour of how the system works.
 4. From there, your first real task: add your first area — copy `_templates/area.md` into
    `areas/<your-thing>/README.md`.
-5. Then drop a note in `inbox/` and run **/sweep** to watch it get routed and receipted.
+5. Then drop a note in `inbox/` — or type `IDEA:` / `Q:` / `EDIT:` straight into a page you
+   are already editing — and run **/sweep** to watch it get resolved and receipted.
 
 No install, no build, no dependencies beyond `git` and a POSIX shell. Works on macOS
 (bash 3.2, BSD tools) and Linux (GNU) alike.
@@ -96,7 +122,7 @@ sets local git config (`core.hooksPath`), which git never syncs or clones — re
 | Command | Playbook | What it does |
 |---------|----------|--------------|
 | `/onboard` | `os/playbooks/onboard.md` | Configure a fresh clone into the owner's own instance. |
-| `/sweep` | `os/playbooks/sweep.md` | Drain the inbox: classify, route, receipt. |
+| `/sweep` | `os/playbooks/sweep.md` | Drain the inbox and resolve EDIT:/Q:/IDEA: markers, then report what needs you. |
 | `/sync` | `os/playbooks/sync.md` | Pull → commit → push, satellites first. |
 | `/audit` | `os/playbooks/audit.md` | Monthly health report: 🟢🟡🔴 flags, no deletions. |
 | `/ingest` | `os/playbooks/ingest.md` | Deep-read one source and route its contents. |

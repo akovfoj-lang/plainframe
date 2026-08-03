@@ -9,6 +9,60 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.4.0] — 2026-08-01
+
+### Added
+
+- **`/sweep` resolves markers, instead of only listing them.** `EDIT:` / `Q:` / `IDEA:`
+  markers were collected by beat 1 and then silently dropped: the Apply beat only ever
+  drained `inbox/`, so a marker typed into a page was surfaced once and abandoned, and the
+  same markers re-appeared on every future run. Sweep now has two tracks. The inbox track
+  keeps its numbering (steps 7–11) untouched; the marker track is lettered M1–M5 so nothing
+  renumbers. `IDEA:` seeds `incubator/`, an answerable `Q:` is answered in place or filed to
+  `answers/`, an undecidable one becomes a `workspace/` note, and a clear `EDIT:` is applied.
+- **Step 12, "Report back" — the run ends by telling the owner what needs them.** Queue
+  first: every marker and inbox piece the sweep would not decide alone, each with its file,
+  its text, and one reason — *needs your judgment*, *protected path*, *outward-facing*,
+  *untrusted origin*, *not a repo-owned page*, *looks already resolved*, or *may already be
+  applied*. Queued markers are left unrouted, unreceipted and uncleared, so the next sweep
+  raises them again; the report is how the owner hears about them now, not the only record.
+
+### Changed
+
+- `os/scripts/markers.sh` scans **untracked-but-not-ignored files**, not just tracked ones
+  (PF-021). A note typed into Obsidian is untracked until the next `/sync`, so the most
+  ordinary marker there is — one written minutes ago — was invisible to the command meant to
+  collect it. `--exclude-standard` keeps `.gitignore`'d paths out, so `.env*` is still never
+  read; `.trash/` joins `.gitignore` because resurfacing a marker from a note the owner
+  deleted is worse than missing it.
+- **Markers count after bullets, quotes, numbered items and indentation** (PF-022), not only
+  at column 0. Obsidian auto-continues a list on Enter, so the natural way to type a marker —
+  under an existing bullet — produced silence, which is indistinguishable from "considered
+  and dismissed". The rule is now documented in `README.md`, where the owner reads it, rather
+  than only in the script.
+- **`trust: data` taint is block-scoped, not file-scoped** (PF-023). A single routed fact
+  landing in an area page used to mark the whole file unverified, which permanently disabled
+  the marker track for exactly the pages that receive routed facts. Taint now runs from the
+  `trust: data` line to the next heading or the next `source:` line.
+- **The `[untrusted origin]` tag is decided per file and baked in at emit time** (PF-024). It
+  was re-derived from the emitted `path:line:text` record by cutting at the first `:` — but a
+  path may legally contain a colon (`inbox/2026-07-31 10:15 clipped.md`), and the truncated
+  key matched nothing, silently dropping the tag. A dropped tag reads as "the owner wrote
+  this", which is the law-10 breach the tag exists to prevent.
+- **One `awk` pass replaces two processes per file** (PF-025): 24.5s → 0.9s on a
+  2000-note vault. Binary suppression is now file-level, matching the `grep -I` it replaced,
+  and tests for control characters rather than non-printables so UTF-8 prose — em dashes,
+  curly quotes, accents, emoji — is not mistaken for a binary and dropped.
+- `os/playbooks/sweep.md`'s crash-recovery section covers the marker track. Two rules carry
+  it: M5 clears only what *this run* resolved, and M2's already-done checks key on
+  *(file, marker text)* and never authorise a delete. A false match therefore costs one line
+  of report, where deleting on a grep would have destroyed a duplicate question outright —
+  the Never tier's "deleting content before it is durably routed+receipted".
+- `os/commands.md`'s `/sweep` description, and with it both generated adapter sets and
+  `README.md`'s command table, name what the command now does.
+- `os/playbooks/guide.md`, `README.md` and `_templates/area.md` describe the marker track,
+  the new `swept-marker:` provenance line, and what `trust: data` now switches off.
+
 ## [1.3.0] — 2026-07-27
 
 ### Added
