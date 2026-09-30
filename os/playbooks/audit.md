@@ -2,9 +2,9 @@
 
 Monthly health report: 🟢🟡🔴 flags only. The audit never deletes anything.
 
-1. Run each check and mark it 🟢 (fine), 🟡 (watch), or 🔴 (act):
+1. Run each check and mark it 🟢 (fine), 🟡 (watch), or 🔴 (act). The mark goes in that check's section heading, one per heading: STATUS.md reads verdicts from headings only, so a mark left in body text is never counted. The checks:
    - Stale pages: untouched >90 days and still carrying a TODO or FLAG.
-   - Generated files: `os/scripts/gen-map.sh --check` and `os/scripts/gen-status.sh --check` — stale output is 🔴.
+   - Generated files: every `os/scripts/gen-*.sh --check` — gen-map, gen-status, gen-commands, and any generator a clone adds — stale output is 🔴.
    - Orphans: pages MAP.md does not route to.
    - Decision conflicts: two entries in `os/decisions.md` on the same topic — newest wins (law 2); flag the older one.
    - Future-dated decisions: any `os/decisions.md` entry dated after today. Clock skew or a mis-stated date mints an entry that "wins" forever — 🔴 until the owner corrects it.
@@ -14,6 +14,6 @@ Monthly health report: 🟢🟡🔴 flags only. The audit never deletes anything
    - Incubator drift: any idea sitting in the same status >60 days.
    - Worklog epoch: `os/worklog.md` has crossed into a new calendar year. Draft rolling the prior year's receipts into `archive/worklog-YYYY.md`, plus the pointer line (`YYYY → archive/worklog-YYYY.md`) to add under worklog.md's "Archived epochs" section, in the report; the owner enacts both moves together — a rotation without the pointer line strands those receipts outside law 9.
    - Invisible homes: gitignored or external homes missing a tracked pointer page (law 4).
-2. Write the results to a dated report: `archive/audit-YYYY-MM-DD.md`. If that path is already taken (a second audit the same day), don't overwrite it — use `archive/audit-YYYY-MM-DD-2.md`, `-3`, and so on until the name is free; an earlier report is a record, and records survive (law 9). One section per check; every flag lists its file path. The audit writes nothing else.
+2. Write the results to a dated report: `archive/audit-YYYY-MM-DD.md`. If that path is already taken (a second audit the same day), don't overwrite it — use `archive/audit-YYYY-MM-DD-2.md`, `-3`, and so on until the name is free; an earlier report is a record, and records survive (law 9). One section per check, its mark in its heading (step 1); every flag lists its file path. The audit writes nothing else.
 3. Fix nothing during the audit. Deletion and demotion are human decisions — put proposals in the report and act only after the owner says yes.
 4. Append the receipt (`YYYY-MM-DD audit: <summary>` to os/worklog.md), then regenerate STATUS.md — regeneration last, so STATUS's receipt list already shows this audit.

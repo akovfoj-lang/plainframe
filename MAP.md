@@ -12,11 +12,11 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
 - CHANGELOG.md — Changelog
 - UPGRADING.md — Upgrading
 - THIRD-PARTY-NOTICES.md — Third-party notices
-- VERSION — current template version: 1.4.0
+- VERSION — current template version: 1.4.1
 
 ## Homes
 
-- _templates/ — (no README)
+- _templates/ — Blank page shapes to copy from, one per page type — never edited in place.
 - answers/ — Questions I had to look up, answered once. One file per question.
 - archive/ — Cold storage for dropped ideas, superseded pages, and finished areas — kept for the record, routed to by nothing.
 - areas/ — Your actual life and work: one folder per domain, each with a README saying what it is, what's true now, and where its stuff lives.

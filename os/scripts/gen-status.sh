@@ -4,11 +4,14 @@
 # Usage: os/scripts/gen-status.sh          regenerate STATUS.md in place
 #        os/scripts/gen-status.sh --check  exit 1 (writing nothing) if STATUS.md is stale
 #
-# Reports: last 10 worklog receipts · inbox count + oldest item age (days) ·
+# Reports: last 10 worklog receipts · inbox count + oldest item age (days, from
+# each item's "captured-at:" line, file time only as a fallback — PF-028) ·
 # incubator counts by "status:" line · workspace counts by "status:" line ·
 # answers count · open flags (FLAG: lines in os/roadmap.md,
-# plus any decisions.md entry still "**Status:** draft" — void until confirmed, law 2) ·
-# latest /audit report + its 🔴/🟡 flag counts, if any report exists (PF-009) ·
+# plus any decisions.md entry still "**Status:** draft" — void until confirmed, law 2,
+# plus any dated worklog line the receipt list cannot see — PF-027) ·
+# latest /audit report + its 🔴/🟡 flag counts, one per check heading, if any
+# report exists (PF-009, PF-026) ·
 # git state (branch, dirty file count, unpushed commit count).
 # The dirty count excludes generated MAP.md/STATUS.md — counting the file this
 # script is about to write would make --check permanently unstable.
@@ -49,6 +52,25 @@ file_mtime() {
   printf '%s\n' "$m"
 }
 
+# An inbox item's capture date from its envelope (`captured-at: YYYY-MM-DD`,
+# os/playbooks/ingest.md; the HTML-comment form is accepted too), as epoch
+# seconds at local midnight — BSD date first, GNU date as fallback, validated
+# like file_mtime above. Returns 1 when the item carries no readable date.
+# File time is only the fallback (PF-028): a clone, checkout or copy rewrites
+# mtimes, so an old capture reads as new on exactly the fresh clones where the
+# audit's inbox-age check is run. Only the first 64 KiB is read — envelopes sit
+# at the top, and an inbox item can be a large binary.
+captured_at() {
+  d=$(head -c 65536 "$1" 2>/dev/null \
+    | grep -a -m 1 -E '^[[:space:]]*(<!--[[:space:]]*)?captured-at:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}' \
+    | sed -E 's/.*captured-at:[[:space:]]*([0-9]{4}-[0-9]{2}-[0-9]{2}).*/\1/') || return 1
+  [ -n "$d" ] || return 1
+  e=$(date -j -f '%Y-%m-%d %H:%M:%S' "$d 00:00:00" +%s 2>/dev/null) \
+    || e=$(date -d "$d 00:00:00" +%s 2>/dev/null) || e=""
+  case "$e" in ''|*[!0-9]*) return 1 ;; esac
+  printf '%s\n' "$e"
+}
+
 generate() {
   printf '%s\n' '<!-- GENERATED — do not hand-edit. Regenerate: os/scripts/gen-status.sh -->'
   printf '\n# STATUS\n\n'
@@ -79,7 +101,7 @@ generate() {
   oldest=""
   while IFS= read -r -d '' f; do
     ic=$((ic + 1))
-    m=$(file_mtime "$f")
+    m=$(captured_at "$f") || m=$(file_mtime "$f")
     if [ -z "$oldest" ] || [ "$m" -lt "$oldest" ]; then oldest=$m; fi
   done < "$TMP/inbox0"
   printf -- '- items: %s\n' "$ic"
@@ -165,6 +187,18 @@ generate() {
       os/decisions.md > "$TMP/drafts"
   fi
   cat "$TMP/drafts" >> "$TMP/flags"
+  # A dated worklog line that misses the column-0 receipt shape — bulleted or
+  # indented — is invisible to the receipt list above, and --check passed
+  # anyway, so the receipt silently fell out of STATUS (PF-027). It is
+  # surfaced here as an open flag rather than failing --check: a mis-shaped
+  # record is something to straighten, not a reason to block every commit.
+  if [ -f os/worklog.md ]; then
+    awk '/^[[:space:]]*([-*+][[:space:]]+)?[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ &&
+         !/^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ {
+           d = $0; sub(/^[^0-9]*/, "", d)
+           printf "MALFORMED receipt at os/worklog.md:%d (dated %s): not at column 0, so the receipt list cannot see it (law 9)\n", NR, substr(d, 1, 10) }' \
+      os/worklog.md >> "$TMP/flags"
+  fi
   fc=$(wc -l < "$TMP/flags"); fc=$((fc))
   if [ "$fc" -gt 0 ]; then
     sed 's/^/- /' "$TMP/flags"
@@ -183,10 +217,27 @@ generate() {
     latest_audit=$(find archive -maxdepth 1 -type f -name 'audit-*.md' 2>/dev/null | sort | tail -n 1)
   fi
   if [ -n "$latest_audit" ]; then
-    red=$(grep -cF '🔴' "$latest_audit" 2>/dev/null || true); red=$((red))
-    yellow=$(grep -cF '🟡' "$latest_audit" 2>/dev/null || true); yellow=$((yellow))
+    # One verdict per check, read from section headings only (PF-026):
+    # audit.md puts each check's mark in that check's heading. Counting every
+    # line that merely contained an emoji let a summary line or a quoted
+    # example inflate the totals — a 1-red/4-yellow report once read as
+    # 3 red, 6 yellow. A heading carrying more than one mark counts once, as
+    # its worst. A report with no marked heading says so instead of reading
+    # as a clean 0/0.
+    read -r red yellow green <<EOF
+$(awk '/^##+[[:space:]]/ {
+         if (index($0, "🔴")) r++
+         else if (index($0, "🟡")) y++
+         else if (index($0, "🟢")) g++
+       }
+       END { printf "%d %d %d\n", r, y, g }' "$latest_audit")
+EOF
     printf -- '- latest: %s\n' "$latest_audit"
-    printf -- '- flags: %s red, %s yellow\n' "$red" "$yellow"
+    if [ $((red + yellow + green)) -gt 0 ]; then
+      printf -- '- flags: %s red, %s yellow\n' "$red" "$yellow"
+    else
+      printf -- '- flags: unreadable — no section heading carries a 🟢/🟡/🔴 verdict (os/playbooks/audit.md step 1)\n'
+    fi
   else
     printf -- '- latest: none yet — run /audit\n'
   fi

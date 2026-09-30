@@ -9,6 +9,38 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.4.1] — 2026-09-30
+
+Found by the first `/audit` run in a live clone: its report and the STATUS line summing
+it disagreed, and the disagreement traced back to how STATUS reads the tree.
+
+### Fixed
+
+- **STATUS counts one audit verdict per check (PF-026).** `gen-status.sh` counted every
+  line of the latest report that contained 🔴 or 🟡, so a summary line or a quoted example
+  inflated the totals: a report with 1 red and 4 yellow checks read as 3 red, 6 yellow.
+  It now reads one verdict per section heading, the worst when a heading carries more
+  than one, and says a report is unreadable rather than printing a clean 0/0 when no
+  heading carries a verdict.
+- **A mis-shaped receipt is flagged instead of vanishing (PF-027).** The receipt list
+  sees only dated lines at column 0, so a receipt written as a bullet or indented fell out
+  of STATUS silently, and `--check` still passed. It now shows under Open flags with its
+  line number. It is a flag, not a `--check` failure: a mis-shaped record is something to
+  straighten, not a reason to block every commit.
+- **Inbox age reads the envelope's `captured-at:` (PF-028).** Age came from file
+  modification time, which a clone, checkout or copy resets, so an old capture read as
+  fresh: this repo's own welcome note, captured 2026-07-18, showed as 14 days old. The
+  envelope date now wins; file time is the fallback for an item without one.
+- **`/audit`'s generated-files check covers every generator (PF-029).** It ran only
+  `gen-map.sh --check` and `gen-status.sh --check`, skipping `gen-commands.sh` and any
+  generator a clone adds. It now runs every `os/scripts/gen-*.sh --check`. Step 1 also
+  says where a verdict goes: in the check's section heading, which is what STATUS reads.
+
+### Added
+
+- **`_templates/README.md`.** MAP listed `_templates/` as "(no README)"; it now routes
+  there by purpose like every other home.
+
 ## [1.4.0] — 2026-08-01
 
 ### Added
