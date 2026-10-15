@@ -9,6 +9,27 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.5.0] — 2026-10-15
+
+### Added
+
+- **`/deepen`, the ninth command** (`os/playbooks/deepen.md`). Give it any task, typed
+  before or after `/deepen`, and it hands back the deeper version a top professional
+  would do instead of doing the task: it names the field, what that professional would
+  do that wasn't asked for, the rawest material they would start from, the named methods
+  and tools, and an outside check that would show the result is right. Then it rewrites
+  the prompt to ask for exactly that and stops for "go". Deeper, not bigger: a line that
+  adds a deliverable instead of raising the standard of the existing one gets cut.
+- **The first playbook that is also a portable skill.** `deepen.md` opens with a skill
+  header kept to `name` and `description`, the two fields claude.ai's skill upload
+  accepts, so the same file can be linked into `~/.claude/skills/` or zipped and
+  uploaded to a Claude account. The other playbooks keep their plain `# Title` opening.
+
+### Changed
+
+- Eight → nine commands in `README.md`, `CLAUDE.md` and `os/playbooks/guide.md`. Older
+  CHANGELOG entries keep their historical wording.
+
 ## [1.4.1] — 2026-09-30
 
 Found by the first `/audit` run in a live clone: its report and the STATUS line summing

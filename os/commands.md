@@ -33,3 +33,7 @@
 ## level-up
 - desc: Weekly 3Ms interview — Mindset, Method, Machine — that ships one automation.
 - playbook: os/playbooks/level-up.md
+
+## deepen
+- desc: Rewrite a task as the deeper version a top professional would do, then stop for "go".
+- playbook: os/playbooks/deepen.md

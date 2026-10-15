@@ -12,7 +12,7 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
 - CHANGELOG.md — Changelog
 - UPGRADING.md — Upgrading
 - THIRD-PARTY-NOTICES.md — Third-party notices
-- VERSION — current template version: 1.4.1
+- VERSION — current template version: 1.5.0
 
 ## Homes
 
