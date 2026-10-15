@@ -35,7 +35,10 @@ would not know, in a few words.
 
 1. **What they would do that wasn't asked.** Moves that change the result, not polish:
    the question they ask first, the failure they guard against, the step amateurs skip.
-   One clause each on why it matters.
+   One clause each on why it matters. Mark a move **(separate)** when it would mean
+   producing something extra — another document, script, list, variant or test — and
+   **(your call)** when it would change one of the user's limits (a length, a count, a
+   deadline). Neither kind enters the rewrite.
 2. **The rawest material.** What they would start from instead of what has already been
    summarised, filtered or interpreted: the original record, the full export, the primary
    source, the actual transcript, the measurements. For each, say where it lives and
@@ -52,21 +55,34 @@ would not know, in a few words.
 
 ## Rewrite the prompt
 
-Then write the new prompt in the user's own voice, ready to paste, in one fenced block:
+Then write the new prompt in the user's own voice, ready to paste, in one fenced block.
+Deeper means the same deliverable made better, never more of them:
 
-- It asks for the same deliverable, with the four answers turned into instructions: do
-  these unasked things, start from this material, use these methods, prove it with this
-  check.
-- It names concrete things (files, sources, tools), not categories.
-- It says what "done" looks like, including the outside check passing.
-- It stays deeper, not bigger. Cut any line that adds a new deliverable instead of
-  raising the standard of the existing one. Aim for at most about twice the original's
-  length.
+1. **Lock the deliverables first.** Note for yourself what the user would hold at the
+   end: each output, how many, and its limits ("one 20-second opener", "one study plan
+   for one hour a day"). That list does not change.
+2. **Ask for exactly that list.** Same outputs, same number, same limits. No extra
+   variants, companion pieces, checklists, appendices or tracking sheets.
+3. **Put the depth into how it is made.** The four answers become requirements on those
+   outputs: what to start from, which methods to use, what the output must get right
+   ("the opener confirms who controls the house"), never a new output ("also write
+   replies to objections").
+4. **Make the outside check the acceptance test.** Say what the output must pass to count
+   as done. If running the check needs its own artefact (a tracking sheet, a test plan),
+   describe the check in one line; do not ask for the artefact.
+5. **Name concrete things** (files, sources, tools), not categories.
+6. **Compare before handing it over.** Put the outputs the rewrite asks for next to the
+   locked list. Anything extra comes out. Aim for at most about twice the original's
+   length.
+
+After the fenced block, and only if answer 1 marked anything (separate) or (your call),
+add one line: "Not in the prompt, your call: …", listing them, so the user decides
+whether to ask for them later.
 
 ## Stop
 
-End with one line after the prompt: "Say **go** to run it, or edit it first." Do not
-start the work until the user says so.
+End with one line: "Say **go** to run it, or edit it first." Do not start the work until
+the user says so.
 
 If a top professional would do nothing different, say so in one line, hand the prompt
 back unchanged, and stop.
@@ -89,3 +105,5 @@ Task: "mark the repeated phone numbers in this cold-call sheet light blue".
 - Outside check: a second, independent script counts the repeats from the raw export
   and must arrive at the same number; then read back every cell's colour against the
   plan, with zero mismatches.
+- The rewrite still asks for one thing: the repeats marked light blue. A colour key on a
+  second tab would be a new output, so it goes in the "Not in the prompt, your call" line.

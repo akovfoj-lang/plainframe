@@ -42,5 +42,5 @@ as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)
 for the real-time state._
 
 - branch: main
-- dirty files: 9 (generated MAP/STATUS excluded)
+- dirty files: 3 (generated MAP/STATUS excluded)
 - unpushed commits: 0

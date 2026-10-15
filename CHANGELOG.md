@@ -9,6 +9,21 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.5.1] — 2026-10-15
+
+### Fixed
+
+- **`/deepen` no longer makes the task bigger.** Its first live test, "write a 20-second
+  cold-call opener", came back asking for three variants, objection replies, a pre-dial
+  checklist and tracking columns, and quietly cut the 20 seconds to 12, against its own
+  "deeper, not bigger" rule. The rewrite now locks the deliverables first (each output,
+  how many, its limits), asks for exactly that list, puts the depth into how the output
+  is made, and turns the outside check into an acceptance test instead of a new
+  artefact. Moves that would add an output are marked **(separate)** and moves that would
+  change a limit **(your call)**; both go in one "Not in the prompt, your call" line
+  after the prompt. Rerun on the same task, it asked for one 20-second opener and listed
+  the extras on that line.
+
 ## [1.5.0] — 2026-10-15
 
 ### Added
