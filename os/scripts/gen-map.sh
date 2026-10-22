@@ -75,10 +75,13 @@ generate() {
   printf '\n# MAP\n\n'
   printf '%s\n' 'One line per home. Route from here; never scan the repo for relevance (law 1).'
   printf '\n## Root files\n\n'
-  for f in AGENTS.md CLAUDE.md profile.md README.md CHANGELOG.md UPGRADING.md THIRD-PARTY-NOTICES.md; do
+  for f in AGENTS.md CLAUDE.md profile.md DESK.md README.md CHANGELOG.md UPGRADING.md THIRD-PARTY-NOTICES.md; do
     if [ -f "$f" ]; then
       t=$(file_h1 "$f")
       [ -n "$t" ] || t="(no title)"
+      # An H1 that opens with its own filename ("AGENTS.md — start here")
+      # would print the name twice; MAP is read every session, so say it once.
+      case $t in "$f — "*) t=${t#"$f — "} ;; esac
       printf -- '- %s — %s\n' "$f" "$t"
     fi
   done

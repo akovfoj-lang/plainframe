@@ -1,6 +1,6 @@
 # Inbox
 
-The dump zone: drop anything here, messy is fine — /sweep routes everything out, and nothing lives here.
+Drop anything here, messy is fine — /sweep routes it all out.
 
 Rules:
 

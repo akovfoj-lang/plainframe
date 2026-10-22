@@ -1,15 +1,25 @@
-# guard.sh — protected-path + owner-token logic shared by sync.sh and
-# os/scripts/hooks/commit-msg (law 3: one home per fact — the two enforcement
-# points must never drift apart, so they source the same list and the same
-# matching rules instead of each keeping its own copy).
+# shellcheck shell=bash disable=SC2034  # sourced: PROTECTED_PATHS is read by the callers
+# guard.sh — protected-path + owner-token logic shared by sync.sh,
+# os/scripts/hooks/commit-msg and os/scripts/hooks/pre-push (law 3: one home
+# per fact — the enforcement points must never drift apart, so they source the
+# same list and the same matching rules instead of each keeping its own copy).
 #
-# Sourced, not executed. Requires TMP (a writable scratch dir) to already be
-# set by the caller. Provides:
+# Sourced, not executed, from the repo root (callers cd there first). Provides:
 #
 #   PROTECTED_PATHS   space-separated pathspecs (word-split on purpose; none
-#                     of these contain spaces). os/decisions.md is deliberately
-#                     NOT in this list — it gets its own append-only carve-out
-#                     below instead of a blanket block.
+#                     of these contain spaces). os/decisions.md is not in this
+#                     list: how the ledger is gated is the owner's setting,
+#                     LEDGER_GATE below.
+#
+#   LEDGER_GATE       `ledger_gate=` in os/guard.conf (itself protected):
+#                       append-only  template default — a pure append of draft
+#                                    entries passes; anything else needs the
+#                                    token (PF-005)
+#                       off          the ledger commits freely; law 2 still
+#                                    governs it, on the record instead of by a
+#                                    hook (PF-040)
+#                     A missing file or an unknown value reads as append-only:
+#                     a typo must fail closed, never open.
 #
 #   has_token MSG TOK   true only if some line of MSG, after trimming leading
 #                       and trailing whitespace, is EXACTLY TOK — a standalone
@@ -23,6 +33,13 @@
 #                       nothing but the token, e.g.:
 #                         "<summary>
 #                       OWNER-CONFIRMED"
+#
+#   clean_msg FILE      prints a commit-message file the way it can count as
+#                       approval: it stops at the scissors line that
+#                       `git commit -v` puts above its diff and drops comment
+#                       lines. commit-msg sees the raw file before git cleans
+#                       it, so without this a diff line that was nothing but
+#                       the token passed as an approval (PF-036).
 #
 #   owner_confirmed MSG      has_token MSG OWNER-CONFIRMED
 #   satellite_confirmed MSG  has_token MSG SATELLITE-CONFIRMED
@@ -42,14 +59,32 @@
 #                       when the inserted line matches nothing later in the
 #                       file (PF-005) — the byte-exact prefix check closes
 #                       that gap regardless.
+#
+#   ledger_needs_token OLD NEW   true when the gate is on and NEW is not a
+#                       pure append onto OLD.
 
-PROTECTED_PATHS='CLAUDE.md AGENTS.md os/scripts os/playbooks os/commands.md .gitignore os/satellites.txt'
+PROTECTED_PATHS='CLAUDE.md AGENTS.md os/scripts os/playbooks os/commands.md os/guard.conf .gitignore .gitattributes os/satellites.txt .claude/settings.json .github/workflows'
+
+LEDGER_GATE=append-only
+if [ -f os/guard.conf ]; then
+  lg_val=$(sed -n 's/^[[:space:]]*ledger_gate[[:space:]]*=[[:space:]]*\([a-z-]*\)[[:space:]]*$/\1/p' os/guard.conf | tail -n 1)
+  case $lg_val in off|append-only) LEDGER_GATE=$lg_val ;; esac
+fi
 
 has_token() {
   ht_msg=$1
   ht_tok=$2
   printf '%s\n' "$ht_msg" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
     | grep -qxF "$ht_tok"
+}
+
+clean_msg() {
+  cm_cc=$(git config core.commentChar 2>/dev/null || true)
+  case $cm_cc in ''|auto) cm_cc='#' ;; esac
+  awk -v cc="$cm_cc" '
+    $0 == cc " ------------------------ >8 ------------------------" { exit }
+    index($0, cc) == 1 { next }
+    { print }' "$1"
 }
 
 owner_confirmed() {
@@ -78,4 +113,9 @@ ledger_append_only() {
     return 1
   fi
   return 0
+}
+
+ledger_needs_token() {
+  [ "$LEDGER_GATE" != off ] || return 1
+  ! ledger_append_only "$1" "$2"
 }

@@ -13,7 +13,7 @@
 # latest /audit report + its 🔴/🟡 flag counts, one per check heading, if any
 # report exists (PF-009, PF-026) ·
 # git state (branch, dirty file count, unpushed commit count).
-# The dirty count excludes generated MAP.md/STATUS.md — counting the file this
+# The dirty count excludes the generated views — counting the file this
 # script is about to write would make --check permanently unstable.
 # --check ignores volatile lines (dirty files, unpushed commits, oldest age):
 # they are true at generation time but drift with no repo change — a committed
@@ -36,21 +36,15 @@ cd "$ROOT"
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/gen-status.XXXXXX")
 trap 'rm -rf "$TMP" ".STATUS.md.$$"' EXIT
 
-# mtime in epoch seconds — BSD stat first, GNU stat as fallback. Each probe's
-# stdout is captured on its own command substitution (a GNU stat rejecting the
-# BSD-style flags still prints filesystem info before it fails, and that must
-# never leak into the result), and the result is validated as a plain integer
-# before use — a probe that produces neither is a loud internal error, never a
-# silent unbound var downstream.
-file_mtime() {
-  m=$(stat -f %m -- "$1" 2>/dev/null) || m=$(stat -c %Y -- "$1" 2>/dev/null) || m=""
-  case "$m" in
-    ''|*[!0-9]*)
-      echo "internal error: cannot read mtime for $1 (stat probe failed on both BSD and GNU forms)" >&2
-      return 2 ;;
-  esac
-  printf '%s\n' "$m"
-}
+# file_mtime (BSD stat first, GNU as fallback, validated) lives in lib/fs.sh,
+# shared with gen-desk.sh and session-start.sh (law 3).
+# shellcheck source=lib/fs.sh
+. "$ROOT/os/scripts/lib/fs.sh"
+
+# The Git section describes the working tree an owner actually uses. sync.sh
+# builds its commits in a scratch worktree (detached, clean by construction)
+# and points this at the real one (PF-030).
+LIVE=${PLAINFRAME_LIVE_ROOT:-.}
 
 # An inbox item's capture date from its envelope (`captured-at: YYYY-MM-DD`,
 # os/playbooks/ingest.md; the HTML-comment form is accepted too), as epoch
@@ -84,7 +78,12 @@ generate() {
   fi
   rc=$(wc -l < "$TMP/receipts"); rc=$((rc))
   if [ "$rc" -gt 0 ]; then
-    tail -10 "$TMP/receipts" | sed 's/^/- /'
+    # Each cut to 160 characters on a word boundary (PF-038): this page is read
+    # at every session start, and ten full receipts once made up 91% of it.
+    # The whole line is still in os/worklog.md, one grep away.
+    tail -10 "$TMP/receipts" | awk '{
+      if (length($0) > 160) { s = substr($0, 1, 160); sub(/[^ ]*$/, "", s); sub(/[[:space:],.;:-]+$/, "", s); $0 = s " …" }
+      print "- " $0 }'
   else
     printf -- '- (none)\n'
   fi
@@ -247,14 +246,14 @@ EOF
   printf -- '_Snapshot from the last regen, not live — branch/dirty/unpushed below are only\n'
   printf -- 'as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)\n'
   printf -- 'for the real-time state._\n\n'
-  if git rev-parse --git-dir >/dev/null 2>&1; then
-    branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="(no branch)"
-    dirty=$(git status --porcelain -- ':(exclude)MAP.md' ':(exclude)STATUS.md' | wc -l)
+  if git -C "$LIVE" rev-parse --git-dir >/dev/null 2>&1; then
+    branch=$(git -C "$LIVE" rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="(no branch)"
+    dirty=$(git -C "$LIVE" status --porcelain -- ':(exclude)MAP.md' ':(exclude)STATUS.md' ':(exclude)DESK.md' | wc -l)
     dirty=$((dirty))
     printf -- '- branch: %s\n' "$branch"
-    printf -- '- dirty files: %s (generated MAP/STATUS excluded)\n' "$dirty"
-    if git rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
-      ahead=$(git rev-list --count '@{u}..HEAD'); ahead=$((ahead))
+    printf -- '- dirty files: %s (generated views excluded)\n' "$dirty"
+    if git -C "$LIVE" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+      ahead=$(git -C "$LIVE" rev-list --count '@{u}..HEAD'); ahead=$((ahead))
       printf -- '- unpushed commits: %s\n' "$ahead"
     else
       printf -- '- unpushed commits: (no upstream)\n'
@@ -265,6 +264,7 @@ EOF
       sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' os/satellites.txt \
         | sed '/^$/d' > "$TMP/sats"
       while IFS= read -r sp; do
+        # shellcheck disable=SC2088  # matching a literal "~/" prefix, not expanding it
         case $sp in "~/"*) sp="$HOME/${sp#\~/}" ;; esac
         if [ ! -e "$sp" ]; then
           printf -- '- satellite %s: missing\n' "$sp"

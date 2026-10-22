@@ -9,6 +9,89 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.6.0] — 2026-10-22
+
+A full review of a real clone, three months and 400 commits in, found the machinery sound
+(every check green, ShellCheck clean, no secret in any commit) and the trouble in how
+syncing worked around people: an owner typing /sync by hand every time, sessions sharing
+one tree, satellites, two machines. This release makes the session sync itself, both ways,
+and closes the gaps a throwaway-clone attack found in the guards.
+
+### Added
+
+- **The session syncs itself** (CLAUDE.md law 8, END protocol). After each finished unit of
+  work and before it ends, the session runs sync without being asked; /sync is only for
+  "sync everything now".
+- **`os/scripts/session-start.sh`**, run by Claude Code at every startup
+  (`.claude/settings.json`, a SessionStart hook) and by any other agent as its first
+  command. It pulls, says when CLAUDE.md changed, checks the views, and names uncommitted
+  or stuck work, with its age. A tool that loads CLAUDE.md for the agent could never honor
+  "pull before reading this file" before (PF-039).
+- **Path-scoped sync** (PF-030): `sync.sh "<msg>" --receipt "<line>" -- <paths>` commits only
+  those paths, plus the regenerated views. The commit is built in a scratch worktree from
+  HEAD plus the paths, and the shared tree is then moved onto it without touching anyone
+  else's files: another session's half-written page, or its unsynced receipt, stays exactly
+  where it was. In the review, an untracked draft from "another session" landed in the
+  next sync's commit; it cannot now.
+- **Sync both ways** (PF-033): fast-forward when only GitHub moved; when both moved, rebase
+  this machine's own unpushed commits on top — never a pushed commit, never a merge, never
+  a force-push. Conflicted views are regenerated, `os/worklog.md` merges by union
+  (`.gitattributes`), and only a real content conflict stops it — with the local commit
+  kept, unpushed, nothing lost.
+- **Sync writes its own receipt** (PF-034): one call does the work commit, the push, then
+  the `sync:` receipt once the outcome is known. 35% of the reviewed clone's commits were
+  hand-run receipt passes.
+- **`os/scripts/hooks/pre-push`** (PF-037): judges every outgoing commit by its stored
+  message, so an approval line amended away, or a commit made with `--no-verify`, no longer
+  reaches GitHub. Commits any remote already holds are never re-judged.
+- **`os/guard.conf`** (PF-040): the ledger's gate is now a protected one-line setting —
+  `ledger_gate=append-only` (default) or `off` — instead of code a clone deletes. A typo
+  fails closed.
+- **DESK.md comes upstream** (`os/scripts/gen-desk.sh`, PF-041): the one page to open when
+  you sit down — what's waiting on you, each project's next step, where every handoff chain
+  left off. It now names a satellite whose uncommitted work is more than a day old (one in
+  the review sat unsynced, on one disk, for 23 days), and lists open questions only.
+- **`os/scripts/test.sh`** (PF-042): 57 end-to-end checks in throwaway repos — a fake
+  GitHub, two machines, a satellite, an upstream template — covering every guard, every
+  sync path (spaces, deletions, another session's staged work, receipt-only, pull-only)
+  and the generators. Run it with doctor and ShellCheck before any kernel change
+  (`.github/CONTRIBUTING.md`).
+- **The audit's Decision health check**: each confirmed ledger entry added or changed since
+  the last report is checked for the owner's own words, for reach beyond what they said, for
+  loosening the constitution, and — on every entry — for drift. Fixes are proposed in the
+  report; the ledger is never edited by the audit.
+- **The audit can run by itself every month**, report-only: a scheduled run writes nothing,
+  asks "Want to file it?", and files only on the owner's word in that run
+  (`os/playbooks/audit.md`).
+- `os/README.md`, so MAP describes the kernel instead of "(no README)".
+
+### Changed
+
+- **Skipped satellites end `PARTIAL`, exit 3** (PF-031), never `OK: sync complete`.
+- **Secrets** (PF-035): with gitleaks installed, the pre-commit hook blocks a staged secret,
+  values redacted; doctor fails on one. The fallback pattern now also knows Anthropic,
+  OpenAI, GitHub and Google API keys, and still only warns.
+- **STATUS cuts each receipt to 160 characters** (PF-038). Ten full receipts were 91% of a
+  page read at every session start.
+- **MAP** lists DESK.md, prints a root file's name once ("AGENTS.md — start here"), and
+  three home descriptions got shorter.
+- /onboard wires the hooks (`doctor.sh --setup`); /handoff, /audit and /onboard sync their
+  own paths with a receipt; the sync, routine and conflict pages describe the new flow.
+- More protected paths: `os/guard.conf`, `.gitattributes`, `.claude/settings.json`,
+  `.github/workflows/`.
+
+### Fixed
+
+- **`git commit -v` could approve itself** (PF-036): commit-msg read the raw message file,
+  diff included, so a diff line that was only the token counted as approval. It now stops
+  at git's scissors line and skips comment lines.
+- **A satellite's new handoff blocked every commit here** (PF-032): DESK's check compared
+  satellite chains strictly, and read uncommitted files. Satellite lines are now live state
+  (ignored by `--check`, as STATUS already did), and chains count committed handoffs only.
+- A sync with nothing to do no longer commits a STATUS-only change.
+- `drift-alert.sh` exits cleanly if it cannot enter the repo; ShellCheck runs clean at
+  warning level.
+
 ## [1.5.1] — 2026-10-15
 
 ### Fixed

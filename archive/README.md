@@ -1,6 +1,6 @@
 # Archive
 
-Cold storage for dropped ideas, superseded pages, and finished areas — kept for the record, routed to by nothing.
+Cold storage: dropped ideas, superseded pages, finished areas — kept, never routed to.
 
 Rules:
 

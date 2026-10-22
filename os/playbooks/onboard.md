@@ -41,13 +41,16 @@ for the tour.
    the name is free.
 9. Write (or rewrite) `profile.md` from `_templates/profile.md`, every answer collected above
    filled in and every placeholder removed.
-10. Regenerate: `os/scripts/gen-map.sh` and `os/scripts/gen-status.sh` — new areas and a new
-    `profile.md` change what `MAP.md` routes to (law 6). Run `os/scripts/gen-commands.sh` too
-    only if this session also changed `os/commands.md` — an ordinary onboard run does not.
+10. Wire the guardrails on this machine: `os/scripts/doctor.sh --setup`. It sets git's
+    hooks path (local config, which git never clones — so once per machine) and reports
+    anything stale. If it notes gitleaks is missing, tell the owner the one-line install
+    (macOS: `brew install gitleaks`) — installing software is the owner's call, not the agent's.
 11. Show the owner everything written or changed — `profile.md`, any new area READMEs,
-    roadmap lines, registry lines — before calling the run done.
+    roadmap lines, registry lines — then sync it: `os/scripts/sync.sh "onboard: <summary>"
+    --receipt "onboard: <summary>" -- <those paths>`. Sync regenerates MAP, STATUS and DESK
+    itself — new areas and a new `profile.md` change what `MAP.md` routes to (law 6).
 12. Interrupted anywhere above? Re-running /onboard starts at step 1 and resumes cleanly: an
     area already scaffolded, a registry line already present, a `profile.md` section already
     filled — none of it gets asked again, and nothing gets written twice (idempotent).
 
-Receipt: append `YYYY-MM-DD onboard: <summary>` to os/worklog.md.
+Receipt: step 11's `--receipt` — `YYYY-MM-DD onboard: <summary>` in os/worklog.md.

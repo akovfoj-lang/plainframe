@@ -90,7 +90,7 @@ trap 'rm -rf "$TMP"' EXIT
 # "-x.md" from being read as a flag.
 {
   while IFS= read -r -d '' f; do
-    case $f in MAP.md|STATUS.md|os/scripts/*) continue ;; esac
+    case $f in MAP.md|STATUS.md|DESK.md|os/scripts/*) continue ;; esac
     [ -f "$f" ] || continue
     printf './%s\0' "$f"
   done < "$TMP/files0"

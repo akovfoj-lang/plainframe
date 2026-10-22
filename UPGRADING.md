@@ -34,24 +34,47 @@ git remote add template https://github.com/akovfoj-lang/plainframe.git
      are), so a conflict here means a template update touched a line you also touched —
      keep yours; only pull in the template's version if you can see exactly why it changed
      and want that change.
-4. Regenerate everything before committing the merge: `os/scripts/gen-map.sh`,
-   `os/scripts/gen-status.sh`, `os/scripts/gen-commands.sh`. A clean merge can still leave
-   `MAP.md` or `STATUS.md` stale (their sources moved, they didn't get rebuilt), and the
+4. Regenerate everything before committing the merge: `os/scripts/gen-commands.sh`,
+   `os/scripts/gen-map.sh`, `os/scripts/gen-desk.sh`, `os/scripts/gen-status.sh`. A clean
+   merge can still leave a view stale (its sources moved, it didn't get rebuilt), and the
    pre-commit hook blocks a commit that carries that (law 6).
-5. Run `os/scripts/doctor.sh`. Fix anything it flags before committing.
-6. Commit the merge, then `/sync` so it's pushed, not stranded on one machine.
+5. Run `os/scripts/doctor.sh` and `os/scripts/test.sh`. Fix anything they flag before
+   committing.
+6. Commit the merge — it changes kernel files, so its message needs the owner's
+   `OWNER-CONFIRMED` line, or pre-push refuses it — then sync so it's pushed, not stranded
+   on one machine.
 
 ## If a generated file itself conflicts
 
-`MAP.md`, `STATUS.md`, and the `.claude/commands/` / `.agents/skills/` adapters are never
-hand-edited (law 6) — if git shows a conflict inside one of them, don't resolve it line by
-line. Take either side (it doesn't matter which one), then immediately regenerate:
+`MAP.md`, `STATUS.md`, `DESK.md`, and the `.claude/commands/` / `.agents/skills/` adapters
+are never hand-edited (law 6) — if git shows a conflict inside one of them, don't resolve
+it line by line. Take either side (it doesn't matter which one), then immediately
+regenerate (sync.sh does this by itself for conflicts it meets):
 
 ```
-os/scripts/gen-map.sh && os/scripts/gen-status.sh && os/scripts/gen-commands.sh
+os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh && os/scripts/gen-status.sh
 ```
 
 The regenerated output is the only version that can be correct either way.
+
+## Coming from 1.5.x to 1.6.0
+
+- **Your customized guards become a setting.** If you removed the ledger's append-only
+  gate from `guard.sh`, `commit-msg` and `sync.sh` (as some clones did), take the
+  template's side of those three files and put `ledger_gate=off` in `os/guard.conf`
+  instead — your choice now lives in one data line, and the next update merges cleanly.
+- **A new hook, already wired.** `pre-push` sits in `os/scripts/hooks/` beside the other
+  two, so a clone that ran `doctor.sh --setup` has it the moment the merge lands. Commits
+  any remote already holds are never judged again, so old history cannot block a push.
+- **Sync changes shape, not meaning.** `sync.sh "<msg>"` with no paths behaves as before
+  — it commits everything. Pass `-- <paths>` to commit only those, and `--receipt` to
+  carry the work's receipt; it writes its own `sync:` receipt now, so the second
+  hand-run pass in the old playbook is gone. Exit 3 means `PARTIAL`.
+- **Claude Code runs session start for you.** `.claude/settings.json` adds a SessionStart
+  hook; Claude Code may ask you once to trust the project's hooks. Other agents run
+  `os/scripts/session-start.sh` themselves (AGENTS.md step 1).
+- **Optional: gitleaks.** `brew install gitleaks` (macOS) turns the secret check from a
+  warning into a real scan that blocks. Nothing else to install.
 
 ## Version
 

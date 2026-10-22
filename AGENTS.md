@@ -7,11 +7,16 @@ One term recurs everywhere below: **the owner** is the human running this repo �
 opposed to you, the agent operating it. Every "the owner" in these docs means that person,
 never you.
 
-1. `git pull --ff-only` first — before reading `CLAUDE.md`, so the constitution you're about
-   to read can't be stale (law 8). If a later pull in this session changes `CLAUDE.md`
-   (e.g. during `/sync`), re-read it in full before continuing — "read once" means once per
-   fresh copy, not once no matter what the tree does underneath you.
+1. Run `os/scripts/session-start.sh` first — before reading `CLAUDE.md`, so the
+   constitution you're about to read can't be stale (law 8). It pulls (both ways safe: it
+   never commits, pushes, or touches uncommitted work), checks the generated views, and
+   names stuck work. Claude Code runs it for you at startup. If a later pull in this
+   session changes `CLAUDE.md` (e.g. during a sync), re-read it in full before continuing
+   — "read once" means once per fresh copy, not once no matter what the tree does
+   underneath you.
 2. **Read `CLAUDE.md` next, then `MAP.md`**, and follow only the pages MAP routes you to.
+3. Sync your own work yourself, after each finished unit and before you stop:
+   `os/scripts/sync.sh "<what you did>" --receipt "<topic>: <one line>" -- <your paths>`.
 
 Tool-specific command adapters live in `.claude/commands/` (Claude Code, native) and
 `.agents/skills/` (Codex, native — other agents can still run Plainframe by reading the

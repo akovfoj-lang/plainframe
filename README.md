@@ -24,14 +24,14 @@ flowchart TD
     homes["Homes · areas/ + incubator/ + workspace/ + answers/"]
     work["Work happens"]
     receipts["Receipts · os/worklog.md"]
-    generators["Generators · MAP.md + STATUS.md"]
+    generators["Generators · MAP.md + STATUS.md + DESK.md"]
     readpath["Next session · read path"]
 
     capture --> sweep --> homes --> work --> receipts --> generators --> readpath --> capture
 
     decisions -.->|governs every beat| sweep
 
-    sync["/sync · pull, commit, push"]
+    sync["sync · both ways, run by the session itself"]
     drift["drift-alert · notify-only watcher"]
 
     generators --> sync --> readpath
@@ -39,9 +39,11 @@ flowchart TD
 ```
 
 You capture into `inbox/`. `/sweep` routes each item to its one home. Work happens in the
-areas. Every action writes a receipt. Generators rebuild the map and the status board from
-those receipts — never from prose. The next session reads the path and continues. `/sync`
-persists it; `drift-alert` watches without touching. `os/decisions.md` sits above all of it.
+areas. Every action writes a receipt. Generators rebuild the map, the status board and the
+desk from those receipts — never from prose. The session syncs its own work, both ways,
+the moment a unit of it is done — nobody has to remember to — and the next session pulls,
+reads the path and continues. `drift-alert` watches without touching. `os/decisions.md`
+sits above all of it.
 
 ### Markers: capture without leaving the page
 
@@ -109,10 +111,14 @@ The first time an integration needs `.env`, the owner creates it once with
 `.env` or write a secret value into it (Never-tier, law 7; see
 [os/playbooks/add-integration.md](os/playbooks/add-integration.md)).
 
-Optional hardening, one command: `os/scripts/doctor.sh --setup` wires a pre-commit hook
-that blocks commits carrying stale generated files, and health-checks the whole repo. It
-sets local git config (`core.hooksPath`), which git never syncs or clones — rerun
-`doctor.sh --setup` on every machine or fresh clone you work from.
+Hardening, one command (/onboard runs it): `os/scripts/doctor.sh --setup` wires three git
+hooks — pre-commit blocks stale generated files and, with
+[gitleaks](https://github.com/gitleaks/gitleaks) installed, staged secrets; commit-msg and
+pre-push hold the protected paths — and health-checks the whole repo. It sets local git
+config (`core.hooksPath`), which git never syncs or clones — rerun `doctor.sh --setup` on
+every machine or fresh clone you work from. In Claude Code, `.claude/settings.json` also
+runs `os/scripts/session-start.sh` at every startup, so each session begins pulled and
+checked.
 
 ---
 
@@ -123,7 +129,7 @@ sets local git config (`core.hooksPath`), which git never syncs or clones — re
 |---------|----------|--------------|
 | `/onboard` | `os/playbooks/onboard.md` | Configure a fresh clone into the owner's own instance. |
 | `/sweep` | `os/playbooks/sweep.md` | Drain the inbox and resolve EDIT:/Q:/IDEA: markers, then report what needs you. |
-| `/sync` | `os/playbooks/sync.md` | Pull → commit → push, satellites first. |
+| `/sync` | `os/playbooks/sync.md` | Sync both ways, satellites first — sessions run it themselves; type it to sync everything now. |
 | `/audit` | `os/playbooks/audit.md` | Monthly health report: 🟢🟡🔴 flags, no deletions. |
 | `/ingest` | `os/playbooks/ingest.md` | Deep-read one source and route its contents. |
 | `/handoff` | `os/playbooks/handoff.md` | Write the session handoff and chain it. |
@@ -191,10 +197,12 @@ in:
   access logging, or retention control beyond what plain git and your host provide. Content
   that genuinely needs those properties belongs in a system built for them, with a tracked
   pointer page here instead (law 4) — not in the repo itself.
-- **Mechanical backstop, not a guarantee:** `os/scripts/doctor.sh` greps staged changes for
-  a few common secret shapes (AWS-style keys, PEM private-key headers, Slack tokens) and
-  warns. It is a cheap tripwire, not a scanner — it catches nothing sophisticated and is
-  never a substitute for not committing the thing in the first place.
+- **Mechanical backstop, not a guarantee:** with gitleaks installed, the pre-commit hook
+  scans exactly what is staged and blocks a commit carrying a secret — values redacted —
+  because history is never rewritten here, so a key that lands in a commit stays in it.
+  Without gitleaks it falls back to a grep for the common shapes (AWS, PEM private keys,
+  Slack, Anthropic, OpenAI, GitHub, Google API keys) and only warns. Either way it is a
+  tripwire, never a substitute for not committing the thing in the first place.
 
 ---
 
@@ -209,7 +217,21 @@ Sibling repos you already have (a codebase, a site). List their paths in `os/sat
 and `/sync` + `drift-alert` will watch them too. Plainframe stays the hub; satellites keep
 their own homes and get pointer pages here. `/sync` never sweeps a satellite's uncommitted
 work in sight-unseen: a dirty satellite is listed and skipped until the commit message has
-`SATELLITE-CONFIRMED` as its own line — reviewed, not assumed.
+`SATELLITE-CONFIRMED` as its own line — reviewed, not assumed — and the sync ends
+`PARTIAL`, not OK, while it waits. After a day, DESK.md lists it under "Waiting on you", so
+it cannot sit unsynced on one disk for weeks.
+
+**Can several sessions work in one clone at once?**
+Yes. Each session syncs only the paths it changed (`os/scripts/sync.sh "…" -- <paths>`):
+the commit is built in a scratch worktree from HEAD plus those paths, and the shared tree
+is then moved onto it without touching anyone else's uncommitted files. Receipts go in with
+`--receipt`, and `os/worklog.md` merges by union, so two sessions' receipts never conflict.
+
+**Does it sync both ways?**
+Yes. Session start pulls (`session-start.sh`); every sync fetches first, fast-forwards when
+only GitHub moved, and rebases this machine's own unpushed commits when both did — never a
+pushed commit, never a force-push. Generated views that conflict are regenerated. Only a
+real content conflict, the same lines changed on both sides, stops it for a human.
 
 **Does this work for a team?**
 Partly, and only as far as plain git gets you. It's a normal repo — branch, open a PR,

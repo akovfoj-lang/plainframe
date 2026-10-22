@@ -11,7 +11,7 @@
 - playbook: os/playbooks/sweep.md
 
 ## sync
-- desc: Pull → commit → push, satellites first.
+- desc: Sync both ways, satellites first — sessions run it themselves; type it to sync everything now.
 - playbook: os/playbooks/sync.md
 
 ## audit

@@ -27,12 +27,11 @@
 # silently falling back to checking the (untrustworthy, for this worktree
 # validation) live worktree.
 #
-# Also runs the staged-secrets tripwire (PF-014) that used to live only in
-# doctor.sh, run by hand — folded in here so it actually fires on every
-# commit. Sources os/scripts/lib/secrets.sh, the same lib doctor.sh uses, so
-# the pattern can never drift between the two call sites (law 3). Strictly
-# warn-only: a hit is printed to stderr but NEVER sets FAIL or blocks the
-# commit — that stays true to its original design in doctor.sh.
+# Also checks the staged changes for secrets (PF-014, PF-035), through
+# os/scripts/lib/secrets.sh — the same lib doctor.sh uses, so the rules can
+# never drift between the two call sites (law 3). With gitleaks installed, a
+# hit BLOCKS the commit: history is never rewritten here, so a key that lands
+# in a commit stays in it. Without gitleaks, the fallback pattern only warns.
 
 set -eu
 ROOT=$(git rev-parse --show-toplevel)
@@ -50,7 +49,8 @@ if ! git checkout-index --prefix="$EXPORT/" -a; then
 fi
 
 FAIL=0
-for c in gen-map gen-status gen-commands; do
+for c in gen-map gen-status gen-desk gen-commands; do
+  [ -f "$EXPORT/os/scripts/$c.sh" ] || continue
   if /bin/bash "$EXPORT/os/scripts/$c.sh" --check >/dev/null 2>&1; then
     :
   else
@@ -63,15 +63,27 @@ for c in gen-map gen-status gen-commands; do
   fi
 done
 
-# Staged secrets (PF-014): warn-only, never touches FAIL. Runs against the
-# real repo (ROOT, not $EXPORT) since `git diff --cached` needs an actual
-# .git to read from; the export above has none.
+# Secrets: runs against the real repo (ROOT, not $EXPORT) since
+# `git diff --cached` needs an actual .git to read from; the export has none.
 # shellcheck source=../lib/secrets.sh
 . "$ROOT/os/scripts/lib/secrets.sh"
-secret_hits=$(staged_secret_hits)
-if [ -n "$secret_hits" ]; then
-  echo "pre-commit: WARN staged changes contain a common secret-shaped token (AWS key / private key header / Slack token) — verify nothing real is about to be committed:" >&2
-  printf '%s\n' "$secret_hits" | sed 's/^/  /' >&2
+if [ "$(secrets_scanner)" = gitleaks ]; then
+  if ! staged_secret_scan > "$EXPORT/.leaks" 2>&1; then
+    echo "pre-commit: BLOCKED — gitleaks found a secret in the staged changes (values redacted):" >&2
+    grep -E '^(Finding|RuleID|File|Line|Fingerprint):' "$EXPORT/.leaks" | sed 's/^/  /' >&2 || sed 's/^/  /' "$EXPORT/.leaks" >&2
+    cat >&2 <<'EOF'
+Move the value to .env (or the password manager) and commit only its name.
+A false positive? Add its Fingerprint line to .gitleaksignore, or end the line
+with a `gitleaks:allow` comment — with the owner's yes.
+EOF
+    FAIL=1
+  fi
+else
+  secret_hits=$(staged_secret_hits)
+  if [ -n "$secret_hits" ]; then
+    echo "pre-commit: WARN staged changes contain a secret-shaped token — verify nothing real is about to be committed (install gitleaks for a real scan that blocks):" >&2
+    printf '%s\n' "$secret_hits" | sed 's/^/  /' >&2
+  fi
 fi
 
 [ "$FAIL" -eq 0 ] || exit 1

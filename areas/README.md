@@ -1,6 +1,6 @@
 # Areas
 
-Your actual life and work: one folder per domain, each with a README saying what it is, what's true now, and where its stuff lives.
+Your life and work, one folder per domain — each README says what's true now.
 
 An area is a domain you're committed to — a project, a role, a part of life. Not a task
 (too small), not "everything" (too big). If it has a goal and a current state, it's an

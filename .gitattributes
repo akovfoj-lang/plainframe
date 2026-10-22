@@ -1,0 +1,7 @@
+# .gitattributes — how git merges what both sides changed (protected path, law 7).
+#
+# The worklog is append-only, so two machines (or two sessions) that each added
+# receipts never conflict: union keeps both sides' new lines. This is what lets
+# sync.sh and session-start.sh bring GitHub's side and this machine's together
+# without a human in the loop (PF-033).
+os/worklog.md merge=union

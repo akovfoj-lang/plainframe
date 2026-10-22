@@ -1,6 +1,6 @@
 ---
 name: sync
-description: Pull → commit → push, satellites first.
+description: Sync both ways, satellites first — sessions run it themselves; type it to sync everything now.
 ---
 
 Follow the playbook at os/playbooks/sync.md. It is the single source of truth for this procedure.

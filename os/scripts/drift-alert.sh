@@ -15,7 +15,7 @@ LC_ALL=C
 export LC_ALL
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-cd "$ROOT"
+cd "$ROOT" || exit 0
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/drift-alert.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
@@ -55,6 +55,7 @@ if [ -f os/satellites.txt ]; then
     | sed '/^$/d' > "$TMP/sats"
 fi
 while IFS= read -r p; do
+  # shellcheck disable=SC2088  # matching a literal "~/" prefix, not expanding it
   case $p in "~/"*) p="$HOME/${p#\~/}" ;; esac
   if [ -e "$p" ]; then
     check_repo "$p" "$p"

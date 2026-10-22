@@ -8,14 +8,21 @@
 # prefix ("OWNER-CONFIRMED: ..."), or a negation ("this is NOT
 # OWNER-CONFIRMED yet") never counts (PF-003a, hardened by adversarial
 # review past an earlier word-boundary-substring rule that a negation could
-# still slip through). os/decisions.md is special-cased: a pure append of
-# new entries passes without the token (agents draft, the owner enacts — law
-# 7); any edit to an existing line, or a new entry that already claims
-# "**Status:** confirmed", needs the token (PF-005).
+# still slip through). Only the message itself counts: git hands this hook
+# the raw file, so the diff `git commit -v` appends below its scissors line
+# and the comment lines are cut first (PF-036). os/decisions.md is gated as
+# os/guard.conf says: by default a pure append of new entries passes without
+# the token (agents draft, the owner enacts — law 7); any edit to an existing
+# line, or a new entry that already claims "**Status:** confirmed", needs the
+# token (PF-005).
+#
+# What this hook cannot see — an approval line amended away later, or a
+# commit made with --no-verify — the pre-push hook catches before it leaves
+# the machine (PF-037).
 #
 # Wired by the same core.hooksPath as pre-commit: os/scripts/doctor.sh --setup
 # Bypass once (owner's call): git commit --no-verify — break-glass only,
-# never routine; it skips this gate entirely and leaves no trace that it did.
+# never routine; pre-push still checks the stored message.
 
 set -eu
 ROOT=$(git rev-parse --show-toplevel)
@@ -26,7 +33,6 @@ if [ -z "$MSG_FILE" ] || [ ! -f "$MSG_FILE" ]; then
   echo "commit-msg: no commit message file given — refusing to guess (internal error)" >&2
   exit 2
 fi
-MSG=$(cat "$MSG_FILE")
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/commit-msg.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
@@ -34,6 +40,7 @@ trap 'rm -rf "$TMP"' EXIT
 # shellcheck source=../lib/guard.sh
 . "$ROOT/os/scripts/lib/guard.sh"
 
+MSG=$(clean_msg "$MSG_FILE")
 if owner_confirmed "$MSG"; then
   exit 0
 fi
@@ -41,7 +48,7 @@ fi
 : > "$TMP/prot"
 # shellcheck disable=SC2086
 git diff --cached --name-only -- $PROTECTED_PATHS >> "$TMP/prot" || true
-if [ -n "$(git diff --cached --name-only -- os/decisions.md)" ]; then
+if [ "$LEDGER_GATE" != off ] && [ -n "$(git diff --cached --name-only -- os/decisions.md)" ]; then
   OLD_LEDGER="$TMP/ledger-old"
   if git cat-file -e HEAD:os/decisions.md 2>/dev/null; then
     git show HEAD:os/decisions.md > "$OLD_LEDGER"
@@ -54,7 +61,7 @@ if [ -n "$(git diff --cached --name-only -- os/decisions.md)" ]; then
   else
     : > "$NEW_LEDGER"
   fi
-  if ! ledger_append_only "$OLD_LEDGER" "$NEW_LEDGER"; then
+  if ledger_needs_token "$OLD_LEDGER" "$NEW_LEDGER"; then
     echo "os/decisions.md" >> "$TMP/prot"
   fi
 fi
@@ -64,11 +71,11 @@ if [ -s "$TMP/prot" ]; then
   sed 's/^/  /' "$TMP/prot" >&2
   echo "OWNER-CONFIRMED is an owner-only token — only the owner can approve this in-session." >&2
   cat >&2 <<'EOF'
-With the owner's explicit in-session yes, make OWNER-CONFIRMED its own line
-in the commit message (trimmed of surrounding whitespace) — a mention,
-prefix, or negation elsewhere in the message never counts. Example:
+With the owner's explicit in-session yes, make the token its own line in the
+commit message (trimmed of surrounding whitespace) — a mention, prefix, or
+negation elsewhere in the message never counts. Example:
   <commit message>
-OWNER-CONFIRMED
+  <a line that is nothing but the token>
 EOF
   exit 1
 fi

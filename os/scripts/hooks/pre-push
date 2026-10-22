@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# pre-push — the last gate before commits leave this machine (law 7, PF-037).
+#
+# commit-msg judges a message before git has stored it, which leaves two gaps:
+# an approved commit can be amended afterwards to drop its approval line, and
+# `git commit --no-verify` skips commit-msg entirely. This hook checks what
+# actually ships: every commit being pushed that no remote-tracking ref holds
+# yet is judged by its STORED message. One that changes a protected path (see
+# os/scripts/lib/guard.sh) — or edits the ledger beyond a pure append, while
+# os/guard.conf keeps that gate on — must carry OWNER-CONFIRMED as its own
+# line. A merge is judged by what it changes against its first parent, so a
+# template merge that brings in kernel changes needs the token on the merge.
+#
+# Commits any remote already holds (origin/*, template/*) are not judged again:
+# they were checked where they were made, and history from before this hook
+# existed must not block every future push.
+#
+# Wired by the same core.hooksPath as the others: os/scripts/doctor.sh --setup
+# Bypass once (owner's call): git push --no-verify — break-glass only.
+
+set -eu
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+
+TMP=$(mktemp -d "${TMPDIR:-/tmp}/pre-push.XXXXXX")
+trap 'rm -rf "$TMP"' EXIT
+
+# shellcheck source=../lib/guard.sh
+. "$ROOT/os/scripts/lib/guard.sh"
+
+: > "$TMP/bad"
+while read -r _lref lsha _rref _rsha; do
+  case $lsha in *[!0]*) ;; *) continue ;; esac   # all zeros: a branch delete
+  git rev-list "$lsha" --not --remotes > "$TMP/revs"
+  while IFS= read -r c; do
+    if git rev-parse -q --verify "$c^1" >/dev/null; then base="$c^1"; else base=""; fi
+    if [ -n "$base" ]; then
+      # shellcheck disable=SC2086
+      git diff --name-only "$base" "$c" -- $PROTECTED_PATHS > "$TMP/files"
+    else
+      # shellcheck disable=SC2086
+      git diff-tree --no-commit-id --name-only -r --root "$c" -- $PROTECTED_PATHS > "$TMP/files"
+    fi
+    if [ "$LEDGER_GATE" != off ] && git diff --quiet "${base:-4b825dc642cb6eb9a060e54bf8d69288fbee4904}" "$c" -- os/decisions.md; then
+      :
+    elif [ "$LEDGER_GATE" != off ]; then
+      if [ -n "$base" ] && git cat-file -e "$base:os/decisions.md" 2>/dev/null; then
+        git show "$base:os/decisions.md" > "$TMP/old"
+      else
+        : > "$TMP/old"
+      fi
+      if git cat-file -e "$c:os/decisions.md" 2>/dev/null; then
+        git show "$c:os/decisions.md" > "$TMP/new"
+      else
+        : > "$TMP/new"
+      fi
+      if ledger_needs_token "$TMP/old" "$TMP/new"; then echo "os/decisions.md" >> "$TMP/files"; fi
+    fi
+    if [ -s "$TMP/files" ] && ! owner_confirmed "$(git log -1 --format=%B "$c")"; then
+      git log -1 --format='  %h %s' "$c" >> "$TMP/bad"
+      sed 's/^/      /' "$TMP/files" >> "$TMP/bad"
+    fi
+  done < "$TMP/revs"
+done
+
+if [ -s "$TMP/bad" ]; then
+  echo "BLOCKED: these commits change protected paths but their stored message has no approval line (law 7):" >&2
+  cat "$TMP/bad" >&2
+  cat >&2 <<'EOF'
+Nothing was pushed. With the owner's explicit in-session yes, reword each one so
+its message has OWNER-CONFIRMED as its own line — they are unpushed, so this is
+your own history to fix: `git commit --amend` for the newest, a rebase onto
+@{u} with each marked reword for older ones.
+EOF
+  exit 1
+fi
+exit 0
