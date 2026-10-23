@@ -20,6 +20,15 @@ never actually cut at the time.
   private clone pays for Actions minutes (macOS at 10x), and every sync pushes to main, so
   there the job is skipped and costs nothing.
 
+### Fixed
+
+- **`test.sh` hung forever on GitHub's macOS runner.** The runner starts each step with
+  SIGPIPE ignored, and its `rand` helper piped `/dev/urandom` through `tr` into `head`:
+  once `head` had its characters and hung up, BSD `tr` kept reading and never exited (GNU
+  `tr` stops, so Linux passed). `rand` now reads a bounded 4 KB and cuts, so nothing in the
+  pipe depends on SIGPIPE. Linux needed no fixes: the GNU/BSD fallbacks in `lib/fs.sh` and
+  `gen-status.sh` held on the first run.
+
 ## [1.6.0] — 2026-10-22
 
 A full review of a real clone, three months and 400 commits in, found the machinery sound

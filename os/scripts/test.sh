@@ -52,7 +52,9 @@ regen() { (cd "$1" && for g in gen-commands gen-desk gen-map gen-status; do
 put_line() { printf '%s\n' "$2" >> "$1"; }
 # Replace line N of FILE with TEXT, portably (no sed -i: BSD and GNU differ).
 set_line() { awk -v n="$2" -v s="$3" 'NR == n { print s; next } { print }' "$1" > "$1.tmp" && mv "$1.tmp" "$1"; }
-rand() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1"; }
+# Bounded input, no early close: GitHub's runner starts steps with SIGPIPE
+# ignored, and BSD tr then reads /dev/urandom forever once head has hung up.
+rand() { head -c 4096 /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | cut -c "1-$1"; }
 on_origin() { git -C "$W/origin.git" cat-file -e "main:$1" 2>/dev/null; }
 origin_file() { git -C "$W/origin.git" show "main:$1" 2>/dev/null; }
 sync_in() { d=$1; shift; (cd "$W/$d" && /bin/bash os/scripts/sync.sh "$@") > "$W/out" 2>&1; echo $? > "$W/rc"; }
