@@ -134,7 +134,7 @@ hook is wrong — never a routine way around a block.
 - Configure this clone into your instance: `os/playbooks/onboard.md` (run `/onboard`) —
   first thing in a fresh clone.
 - Full orientation for a human: `os/playbooks/guide.md` (run `/guide`).
-- The nine commands and their playbooks: `os/commands.md`.
+- The ten commands and their playbooks: `os/commands.md`.
 - `/level-up` — weekly 3Ms interview that ships one automation: `os/playbooks/level-up.md`.
 - `/deepen` — rewrites a task as the deeper version a top professional would do, then
   stops for "go": `os/playbooks/deepen.md`. Its playbook doubles as a portable skill.

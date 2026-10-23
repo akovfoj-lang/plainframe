@@ -34,12 +34,31 @@ This is the brain-rewire mechanism. The kit doesn't need cron jobs to anchor beh
 - `os/decisions.md` — recent decisions (what's already shipped or considered)
 - `.agents/skills/*/SKILL.md` frontmatter — what capabilities exist
 - Recent `archive/audit-YYYY-MM-DD.md` if present
+- `os/worklog.md` — the receipts, counted by topic (Phase 1 opens with the count)
 
 ## Execution — three phases
 
 ### Phase 1 — Mindset interview (find the candidate)
 
-Surface 1-3 candidates ranked by leverage. Ask these in order, conversationally:
+Surface 1-3 candidates ranked by leverage.
+
+**Start from the record, not from memory.** Before the first question, count the last 30
+days of receipts by topic, leaving out `sync` and `handoff` (they are bookkeeping, not
+work):
+
+```bash
+since=$(date -v-30d +%F 2>/dev/null || date -d '30 days ago' +%F)
+sed -nE 's/^([0-9]{4}-[0-9]{2}-[0-9]{2}) ([^:]{1,40}):.*/\1\t\2/p' os/worklog.md \
+  | awk -F'\t' -v s="$since" '$1 >= s {print $2}' | grep -vxE 'sync|handoff' \
+  | sort | uniq -c | sort -rn | head -5
+```
+
+Open with the top topics and their counts ("Your worklog shows invoices 14 times and
+client-onboarding 9"), and use them as your recommended answer to question 1. Receipts
+show what got done, not what felt manual, so questions 2-5 still come from the user. On a
+new clone with under 30 days of receipts, say so and go straight to the questions.
+
+Ask these in order, conversationally:
 
 1. *"Walk me through your week. What did you do 3+ times?"* (frequency)
 2. *"Anything that felt manual, boring, or copy-paste?"* (drudgery)

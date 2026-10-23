@@ -37,3 +37,7 @@
 ## deepen
 - desc: Rewrite a task as the deeper version a top professional would do, then stop for "go".
 - playbook: os/playbooks/deepen.md
+
+## grill-me
+- desc: Interview the owner one question at a time, saving every answer to a brainstorm file.
+- playbook: os/playbooks/grill-me.md

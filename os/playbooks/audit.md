@@ -5,6 +5,7 @@ Monthly health report: 🟢🟡🔴 flags only. The audit never deletes anything
 1. Run each check and mark it 🟢 (fine), 🟡 (watch), or 🔴 (act). The mark goes in that check's section heading, one per heading: STATUS.md reads verdicts from headings only, so a mark left in body text is never counted. The checks:
    - Stale pages: untouched >90 days and still carrying a TODO or FLAG.
    - Generated files: every `os/scripts/gen-*.sh --check` — gen-map, gen-status, gen-desk, gen-commands, and any generator a clone adds — stale output is 🔴.
+   - Reading load: what every session must read before it starts — `wc -c AGENTS.md CLAUDE.md MAP.md`. A total over 13,000 bytes is 🟡, over 16,000 🔴; give the total, each file's size, and the change since the last audit report. Every session pays for every byte, so a file grows unnoticed until someone measures it. For each flag, draft the cut in the report: what moves out, and the one home it moves to (law 3). CLAUDE.md and AGENTS.md are protected, so the owner enacts it.
    - Orphans: pages MAP.md does not route to.
    - Decision conflicts: two entries in `os/decisions.md` on the same topic — newest wins (law 2); flag the older one.
    - Future-dated decisions: any `os/decisions.md` entry dated after today. Clock skew or a mis-stated date mints an entry that "wins" forever — 🔴 until the owner corrects it.

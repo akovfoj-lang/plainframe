@@ -13,7 +13,7 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
 - CHANGELOG.md — Changelog
 - UPGRADING.md — Upgrading
 - THIRD-PARTY-NOTICES.md — Third-party notices
-- VERSION — current template version: 1.6.4
+- VERSION — current template version: 1.7.0
 
 ## Homes
 
@@ -22,6 +22,7 @@ One line per home. Route from here; never scan the repo for relevance (law 1).
 - archive/ — Cold storage: dropped ideas, superseded pages, finished areas — kept, never routed to.
 - areas/ — Your life and work, one folder per domain — each README says what's true now.
   - areas/example-project/ — A placeholder area showing the shape of an area page — replace it with your first real area.
+- brainstorms/ — Dated discovery sessions — how a round's scope was reached, kept as history.
 - inbox/ — Drop anything here, messy is fine — /sweep routes it all out.
 - incubator/ — Ideas in development: one file per idea, each carrying a lifecycle line from seed to adopted or dropped.
 - os/ — The kernel: ledger, worklog, routine, commands, and the scripts that keep them honest.

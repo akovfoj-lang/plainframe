@@ -9,6 +9,30 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.7.0] — 2026-10-23
+
+A tenth command, and two existing ones now start from measurements instead of memory.
+
+### Added
+
+- **`/grill-me`** (`os/playbooks/grill-me.md`) interviews the owner one question at a time,
+  each with a recommended answer, and saves every answer to
+  `brainstorms/YYYY-MM-DD-<topic>.md` before asking the next. Like `/deepen`, its playbook
+  carries a skill header, so the same file works as a skill outside the repo, for any
+  agent. Based on Matt Pocock's MIT-licensed `grill-me`; credit and licence are in
+  `THIRD-PARTY-NOTICES.md`.
+- **`brainstorms/`**, the home for those capture files. A brainstorm is history, never
+  the source of truth.
+
+### Changed
+
+- **`/audit` measures reading load**: the bytes of `AGENTS.md`, `CLAUDE.md` and `MAP.md`
+  that every session reads. Over 13,000 is 🟡, over 16,000 🔴, with the cut drafted for
+  the owner. A private clone's `CLAUDE.md` had grown to 9.7 KB before anyone measured it.
+- **`/level-up` opens with the worklog**: it counts the last 30 days of receipts by topic
+  and suggests from the top ones, instead of relying on what the owner remembers doing.
+- Nine → ten commands in `README.md`, `CLAUDE.md` and `os/playbooks/guide.md`.
+
 ## [1.6.4] — 2026-10-23
 
 A second independent review, of the git hooks and the guard logic (`hooks/pre-commit`,
