@@ -7,6 +7,9 @@ permissions:
   contents: read
 jobs:
   check:
+    # Public repos only: a private clone pays for Actions minutes (macOS at 10x),
+    # and every sync pushes to main.
+    if: ${{ !github.event.repository.private }}
     strategy:
       fail-fast: false
       matrix:

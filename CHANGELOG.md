@@ -16,7 +16,9 @@ never actually cut at the time.
 - **CI on macOS and Linux** (`.github/workflows/check.yml`): every push to main and every
   pull request runs doctor, ShellCheck at warning level and the end-to-end tests on both
   systems. 1.6.0 had passed on macOS only; the workflow was held back because the token
-  that pushed the release could not write workflows.
+  that pushed the release could not write workflows. It runs on public repos only: a
+  private clone pays for Actions minutes (macOS at 10x), and every sync pushes to main, so
+  there the job is skipped and costs nothing.
 
 ## [1.6.0] — 2026-10-22
 

@@ -57,6 +57,16 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.6.0 to 1.6.1
+
+- **The merge brings a workflow file**, `.github/workflows/check.yml`, and GitHub refuses
+  to take one from a token without the `workflow` scope ("refusing to allow an OAuth App
+  to create or update workflow"). Before you push the merge, check `gh auth status`; if
+  `workflow` is not among the token scopes, run `gh auth refresh -h github.com -s workflow`
+  and approve it in the browser.
+- **It costs a private clone nothing.** The job runs on public repos only; in a private
+  clone GitHub lists it as skipped.
+
 ## Coming from 1.5.x to 1.6.0
 
 - **Your customized guards become a setting.** If you removed the ledger's append-only
