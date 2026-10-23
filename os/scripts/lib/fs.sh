@@ -20,6 +20,13 @@
 #                         in REPO (untracked included, deleted files counted
 #                         but not dated), or nothing when the tree is clean.
 #                         Extra arguments are paths to leave out.
+#
+#   satellite_list        the repo paths in os/satellites.txt (read from the
+#                         current directory, the repo root), one per line, for
+#                         every script that walks the satellites: comment
+#                         lines, " #" comments and blanks dropped, ends
+#                         trimmed, a leading ~/ expanded. A "#" inside a path
+#                         is part of the path.
 
 file_mtime() {
   m=$(stat -f %m -- "$1" 2>/dev/null) || m=$(stat -c %Y -- "$1" 2>/dev/null) || m=""
@@ -58,4 +65,15 @@ oldest_dirty() {
   done < <(git -C "$od_repo" status --porcelain=v1 -uall -z 2>/dev/null)
   [ "$od_count" -gt 0 ] || return 0
   printf '%s %s\n' "$od_count" "${od_oldest:-0}"
+}
+
+satellite_list() {
+  [ -f os/satellites.txt ] || return 0
+  # sed, never xargs (apostrophes kill it).
+  sed -e '/^[[:space:]]*#/d' -e 's/[[:space:]]#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+    os/satellites.txt | sed '/^$/d' | while IFS= read -r sl_p; do
+      # shellcheck disable=SC2088  # matching a literal "~/" prefix, not expanding it
+      case $sl_p in "~/"*) sl_p="$HOME/${sl_p#\~/}" ;; esac
+      printf '%s\n' "$sl_p"
+    done
 }

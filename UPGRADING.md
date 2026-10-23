@@ -57,6 +57,18 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.6.2 to 1.6.3
+
+- **A second workflow arrives, switched off.** `.github/workflows/check-private.yml` runs
+  the same checks on Linux only, when the kernel changes and once a week — a few minutes
+  a month. It does nothing until you opt in:
+  `gh variable set PLAINFRAME_PRIVATE_CI --body linux`. The `workflow` token scope note
+  under 1.6.1 applies to this merge too.
+- **Three answers from sync change.** A tree mid-merge (or rebase, cherry-pick, revert,
+  or with unresolved conflicts) is BLOCKED instead of committed. A branch with no
+  upstream ends PARTIAL instead of OK. And paths after `--` are literal and relative to
+  where you run it, so run from the repo root, as the playbook says, and nothing changes.
+
 ## Coming from 1.6.0 to 1.6.1
 
 - **The merge brings a workflow file**, `.github/workflows/check.yml`, and GitHub refuses

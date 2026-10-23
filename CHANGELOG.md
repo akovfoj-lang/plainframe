@@ -9,6 +9,65 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.6.3] — 2026-10-23
+
+An independent review of `sync.sh` and `lib/converge.sh`, run in a clone with no remote,
+reproduced 18 bugs, each with a script that showed it. All 18 are fixed, and each has a
+test in `test.sh` (80 tests, up from 59). On 1.6.2, the new tests fail and the old ones
+still pass.
+
+### Fixed — could push the wrong thing, or let a guard through
+
+- **A satellite's own `STATUS.md`, `MAP.md` or `DESK.md` in a rebase conflict was
+  "settled" by committing its conflict markers**, pushed, with `OK`. Only a tree with the
+  generators settles a view by redrawing it; in a satellite it is a real conflict, PULL
+  BLOCKED (`lib/converge.sh`).
+- **A staged `git mv` of a protected file passed the protected-path gate**, and moving a
+  hook out of `os/scripts/` also switched off the hook layer behind it. The gate now
+  judges the commit's own tree with renames counted as deletes.
+- **Syncing mid-merge committed and pushed conflict markers**, with `OK`. A tree in the
+  middle of a merge, rebase, cherry-pick or revert, or with unresolved conflicts, is now
+  BLOCKED; such a satellite is skipped, PARTIAL (`unfinished_op`, `lib/converge.sh`).
+- **Paths after `--` were globs**: `[a].md` also committed another session's `a.md`. Each
+  path is now literal.
+- **Run from a subdirectory, a relative path named the root's file** (`-- README.md` from
+  `areas/` synced `README.md`). Paths are now the caller's.
+- **The ledger gate read an uncommitted `os/guard.conf`**, so a local `ledger_gate=off`
+  opened it. The committed setting judges.
+
+### Fixed — reported the wrong outcome, or stopped in a bad state
+
+- **A branch with no upstream ended `OK: synced`** with a sync receipt and nothing pushed.
+  It is now PARTIAL ("not pushed (no upstream)"), with no sync receipt.
+- **A satellite's own commit hook refusing aborted the run silently**, leaving it staged.
+  It is now skipped with its index restored; this repo still syncs; PARTIAL.
+- **A path that could not be staged stopped the run after the satellites were already
+  pushed**, with no receipt. The commit's tree is now built, and the gate run, before any
+  satellite is touched.
+- **Only a view dirty here while GitHub moved it** died with a raw git error and no final
+  word, on every retry. The scratch tree is reset when nothing is committed, and any move
+  that fails now says BLOCKED.
+- **A file with a non-ASCII name always ended PARTIAL**, the tree left behind GitHub;
+  **so did a changed symlink**. Names are compared raw (`-z`), and a symlink by its target.
+- **Two pushes racing on GitHub's side** ("cannot lock ref") were not retried.
+- **An interrupt between moving the branch and its files** left a staged revert of the
+  sync. Those two steps now run with INT, TERM and HUP held off.
+- **Rerunning after an offline PARTIAL wrote the `--receipt` twice**; it is now kept once.
+- **Another session's pending worklog line was dropped** when it repeated an older line;
+  only the lines the update itself adds are left out now.
+- **The old name of a `git rm` or `git mv`** was refused as "no such path".
+- **A satellite path containing `#`** was cut at the `#` and skipped. A comment is now a
+  whole line or ` #…`; one `satellite_list` (`lib/fs.sh`) replaces five copies of the
+  parser (sync, session start, drift alert, DESK, STATUS).
+
+### Added
+
+- **`check-private.yml`**: an opt-in, Linux-only run of the same checks for a private
+  clone, when the kernel changes and once a week. It stays off until
+  `gh variable set PLAINFRAME_PRIVATE_CI --body linux`.
+- **A note on long receipts**: `sync.sh` warns on a `--receipt` over 200 characters (the
+  worklog asks for short ones; STATUS cuts them at 160). It never refuses one.
+
 ## [1.6.2] — 2026-10-22
 
 ### Fixed

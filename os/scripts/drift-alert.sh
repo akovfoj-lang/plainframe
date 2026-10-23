@@ -16,6 +16,8 @@ export LC_ALL
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT" || exit 0
+# shellcheck source=lib/fs.sh
+. "$ROOT/os/scripts/lib/fs.sh"
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/drift-alert.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
@@ -48,15 +50,8 @@ check_repo() {
 }
 
 # Satellites first (same order sync.sh works in), main repo last.
-: > "$TMP/sats"
-if [ -f os/satellites.txt ]; then
-  # Strip comments and trim with sed — never xargs (apostrophes kill it).
-  sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' os/satellites.txt \
-    | sed '/^$/d' > "$TMP/sats"
-fi
+satellite_list > "$TMP/sats"
 while IFS= read -r p; do
-  # shellcheck disable=SC2088  # matching a literal "~/" prefix, not expanding it
-  case $p in "~/"*) p="$HOME/${p#\~/}" ;; esac
   if [ -e "$p" ]; then
     check_repo "$p" "$p"
   else

@@ -1,0 +1,41 @@
+name: check-private
+# The same checks as check.yml, for a private clone that opts in (1.6.3).
+# check.yml skips private repos: there every sync pushes to main, and Actions
+# minutes count against the plan. This one runs on Linux only (1x minutes),
+# only where the repository variable PLAINFRAME_PRIVATE_CI is "linux", and only
+# when the kernel changes or once a week, so it costs a few minutes a month.
+# Turn it on: gh variable set PLAINFRAME_PRIVATE_CI --body linux
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'os/scripts/**'
+      - 'os/commands.md'
+      - 'os/guard.conf'
+      - '.github/workflows/**'
+      - '.gitattributes'
+      - '.gitignore'
+      - 'VERSION'
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    # Not github.event.repository.private: a scheduled run's event carries no
+    # repository, so the variable alone decides.
+    if: ${{ vars.PLAINFRAME_PRIVATE_CI == 'linux' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tools
+        run: sudo apt-get update -q && sudo apt-get install -y -q shellcheck
+      - name: Doctor
+        run: bash os/scripts/doctor.sh
+      - name: ShellCheck
+        run: shellcheck -S warning -x os/scripts/*.sh os/scripts/lib/*.sh os/scripts/hooks/*
+      - name: Tests
+        run: bash os/scripts/test.sh

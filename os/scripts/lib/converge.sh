@@ -16,6 +16,11 @@
 #   quiet_fetch DIR REMOTE  git fetch that never prompts and gives up on a dead
 #                           network instead of hanging a session.
 #   in_rebase DIR           true while DIR has a rebase in progress.
+#   unfinished_op DIR       prints what DIR is in the middle of — rebase,
+#                           merge, cherry-pick, revert, or conflicts (unmerged
+#                           paths) — and nothing when it is in none of them.
+#                           Nothing is ever committed from such a tree: its
+#                           files can hold conflict markers.
 #   rebase_onto DIR ONTO    rebases DIR's unpushed commits onto ONTO — the one
 #                           rewrite the constitution allows: this machine's own
 #                           commits, never a pushed one. A merge among them (a
@@ -23,7 +28,9 @@
 #                           flattened: only the first-parent line moves, and
 #                           each merge keeps its other parents exactly as they
 #                           were. Views that conflict are regenerated and the
-#                           rebase goes on; os/worklog.md never conflicts
+#                           rebase goes on — in a Plainframe tree only: in a
+#                           satellite, a file merely named like a view is the
+#                           owner's own content; os/worklog.md never conflicts
 #                           (merge=union, .gitattributes). Any
 #                           other conflict aborts the rebase cleanly — the tree
 #                           is exactly as it was — returns 1, and leaves the
@@ -76,6 +83,16 @@ in_rebase() {
   )
 }
 
+unfinished_op() {
+  un_gd=$(git -C "$1" rev-parse --absolute-git-dir 2>/dev/null) || return 0
+  if [ -d "$un_gd/rebase-merge" ] || [ -d "$un_gd/rebase-apply" ]; then echo rebase
+  elif [ -f "$un_gd/MERGE_HEAD" ]; then echo merge
+  elif [ -f "$un_gd/CHERRY_PICK_HEAD" ]; then echo cherry-pick
+  elif [ -f "$un_gd/REVERT_HEAD" ]; then echo revert
+  elif [ -n "$(git -C "$1" ls-files -u)" ]; then echo conflicts
+  fi
+}
+
 rebase_onto() {
   ro_dir=$1
   ro_onto=$2
@@ -114,7 +131,9 @@ rebase_onto() {
     ro_conf=$(git -C "$ro_dir" diff --name-only --diff-filter=U)
     ro_bad=$(printf '%s\n' "$ro_conf" | while IFS= read -r f; do
       [ -n "$f" ] || continue
-      is_view "$f" || printf '%s\n' "$f"
+      # Only a tree with the generators can settle a view by redrawing it.
+      if is_view "$f" && [ -f "$ro_dir/os/scripts/gen-map.sh" ]; then continue; fi
+      printf '%s\n' "$f"
     done)
     if [ -n "$ro_bad" ]; then
       git -C "$ro_dir" rebase --abort >/dev/null 2>&1 || true

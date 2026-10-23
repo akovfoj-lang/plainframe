@@ -108,15 +108,7 @@ handoffs_in() {
   fi
 }
 
-satellites() {
-  [ -f os/satellites.txt ] || return 0
-  sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' os/satellites.txt \
-    | sed '/^$/d' | while IFS= read -r p; do
-        # shellcheck disable=SC2088  # matching a literal "~/" prefix, not expanding it
-        case $p in "~/"*) p="$HOME/${p#\~/}" ;; esac
-        printf '%s\n' "$p"
-      done
-}
+satellites() { satellite_list; }
 
 generate() {
   printf '<!-- GENERATED — do not hand-edit. Regenerate: os/scripts/gen-desk.sh -->\n\n'

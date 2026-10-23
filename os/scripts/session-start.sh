@@ -103,10 +103,8 @@ if [ -n "$od" ]; then
 fi
 
 if [ -f os/satellites.txt ]; then
-  sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' os/satellites.txt | sed '/^$/d' |
+  satellite_list |
   while IFS= read -r sp; do
-    # shellcheck disable=SC2088  # matching a literal "~/" prefix, not expanding it
-    case $sp in "~/"*) sp="$HOME/${sp#\~/}" ;; esac
     git -C "$sp" rev-parse --git-dir >/dev/null 2>&1 || continue
     sn=$(basename "$sp")
     sod=$(oldest_dirty "$sp")

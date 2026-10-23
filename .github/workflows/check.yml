@@ -8,7 +8,8 @@ permissions:
 jobs:
   check:
     # Public repos only: a private clone pays for Actions minutes (macOS at 10x),
-    # and every sync pushes to main.
+    # and every sync pushes to main. A private clone can opt in to a Linux-only
+    # run instead: check-private.yml.
     if: ${{ !github.event.repository.private }}
     strategy:
       fail-fast: false

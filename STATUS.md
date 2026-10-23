@@ -11,7 +11,7 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 ## Inbox
 
 - items: 1
-- oldest: 96 day(s)
+- oldest: 97 day(s)
 
 ## Incubator
 
@@ -41,6 +41,6 @@ _Snapshot from the last regen, not live — branch/dirty/unpushed below are only
 as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)
 for the real-time state._
 
-- branch: fix/sync-keeps-merges
-- dirty files: 5 (generated views excluded)
+- branch: fix/sync-review-1.6.3
+- dirty files: 14 (generated views excluded)
 - unpushed commits: (no upstream)

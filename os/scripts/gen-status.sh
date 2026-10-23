@@ -261,11 +261,8 @@ EOF
     # Satellites: one line each — a stuck satellite must not rot invisibly
     # behind a clean main repo (law 8). Volatile: stripped in --check.
     if [ -f os/satellites.txt ]; then
-      sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' os/satellites.txt \
-        | sed '/^$/d' > "$TMP/sats"
+      satellite_list > "$TMP/sats"
       while IFS= read -r sp; do
-        # shellcheck disable=SC2088  # matching a literal "~/" prefix, not expanding it
-        case $sp in "~/"*) sp="$HOME/${sp#\~/}" ;; esac
         if [ ! -e "$sp" ]; then
           printf -- '- satellite %s: missing\n' "$sp"
         elif ! git -C "$sp" rev-parse --git-dir >/dev/null 2>&1; then

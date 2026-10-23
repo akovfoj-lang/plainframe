@@ -65,11 +65,17 @@
 
 PROTECTED_PATHS='CLAUDE.md AGENTS.md os/scripts os/playbooks os/commands.md os/guard.conf .gitignore .gitattributes os/satellites.txt .claude/settings.json .github/workflows'
 
-LEDGER_GATE=append-only
-if [ -f os/guard.conf ]; then
-  lg_val=$(sed -n 's/^[[:space:]]*ledger_gate[[:space:]]*=[[:space:]]*\([a-z-]*\)[[:space:]]*$/\1/p' os/guard.conf | tail -n 1)
-  case $lg_val in off|append-only) LEDGER_GATE=$lg_val ;; esac
-fi
+# read_ledger_gate FILE — sets LEDGER_GATE from a guard.conf. sync.sh reads
+# the committed one (HEAD:os/guard.conf): an uncommitted edit to a protected
+# setting must not be what judges the commit.
+read_ledger_gate() {
+  LEDGER_GATE=append-only
+  if [ -f "$1" ]; then
+    lg_val=$(sed -n 's/^[[:space:]]*ledger_gate[[:space:]]*=[[:space:]]*\([a-z-]*\)[[:space:]]*$/\1/p' "$1" | tail -n 1)
+    case $lg_val in off|append-only) LEDGER_GATE=$lg_val ;; esac
+  fi
+}
+read_ledger_gate os/guard.conf
 
 has_token() {
   ht_msg=$1

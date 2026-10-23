@@ -205,6 +205,9 @@ sync_in A "z" --receipt "test: z" -- areas/z.md
 long=$(printf 'w%.0s ' $(seq 1 120))
 reset_world; printf 'l\n' > "$A/areas/l.md"; sync_in A "long" --receipt "test: $long" -- areas/l.md
 [ -z "$(awk '/^## Last 10 receipts/ { on = 1; next } /^## / { on = 0 } on && length($0) > 170' "$A/STATUS.md")" ]; v "STATUS cuts each receipt to 160 characters"
+[ "$(rc)" -eq 0 ] && said 'keep receipts to about 200' && origin_file os/worklog.md | grep -qF "test: $long"; v "a long receipt: warned, still written whole" "$W/out"
+reset_world; printf 's\n' > "$A/areas/s.md"; sync_in A "short" --receipt "test: short" -- areas/s.md
+[ "$(rc)" -eq 0 ] && ! said 'keep receipts to about 200'; v "a short receipt: no warning" "$W/out"
 
 reset_world; printf 'sp\n' > "$A/areas/with space.md"
 sync_in A "space" -- "areas/with space.md"
@@ -284,6 +287,105 @@ set_line "$B/areas/README.md" 3 "B changed this"; sync_in B "b" -- areas/README.
 put_line "$A/areas/README.md" "A's unsaved edit"; printf 'y\n' > "$A/areas/y.md"
 sync_in A "y" -- areas/y.md
 [ "$(rc)" -eq 3 ] && on_origin areas/y.md && grep -q "A's unsaved edit" "$A/areas/README.md"; v "someone's unsaved edit to a file the pull changes: pushed, exit 3, edit untouched" "$W/out"
+# -- Sync: hard cases (the 1.6.3 review, one test per finding) ---------------------
+echo "== sync: hard cases"
+reset_world; git clone -q "$W/sat.git" "$W/sat2"
+printf 'their side\n' > "$W/sat2/STATUS.md"; git -C "$W/sat2" add -A; git -C "$W/sat2" commit -qm theirs; git -C "$W/sat2" push -q origin main
+printf 'this side\n' > "$W/sat/STATUS.md"; git -C "$W/sat" add -A; git -C "$W/sat" commit -qm mine; rm -rf "$W/sat2"
+printf 's\n' > "$A/areas/s.md"; sync_in A "s" -- areas/s.md
+[ "$(rc)" -eq 1 ] && said 'PULL BLOCKED' && ! git -C "$W/sat.git" show main:STATUS.md | grep -q '^<<<<<<<'; v "a satellite's own STATUS.md in conflict: PULL BLOCKED, never settled with markers" "$W/out"
+reset_world; git -C "$A" mv CLAUDE.md CONSTITUTION.md
+sync_in A "rename" -- CLAUDE.md CONSTITUTION.md
+[ "$(rc)" -eq 1 ] && said 'protected paths changed' && on_origin CLAUDE.md; v "a staged git mv of a protected file: BLOCKED" "$W/out"
+reset_world; git -C "$A" mv os/scripts/hooks/commit-msg areas/commit-msg
+sync_in A "hooks" -- os/scripts/hooks areas/commit-msg
+[ "$(rc)" -eq 1 ] && said 'protected paths changed' && on_origin os/scripts/hooks/commit-msg; v "a staged git mv of a hook out of os/scripts: BLOCKED, the hook stays" "$W/out"
+reset_world
+git -C "$A" checkout -qb side; put_line "$A/areas/c.md" side; git -C "$A" add -A; git -C "$A" commit -q --no-verify -m side
+git -C "$A" checkout -q main; put_line "$A/areas/c.md" main; git -C "$A" add -A; git -C "$A" commit -q --no-verify -m main
+git -C "$A" merge side >/dev/null 2>&1; printf 'n\n' > "$A/areas/n.md"
+sync_in A "notes" -- areas
+[ "$(rc)" -eq 1 ] && said 'middle of a merge' && ! on_origin areas/c.md; v "mid-merge: BLOCKED, the conflict markers never leave" "$W/out"
+git -C "$A" merge --abort; git -C "$A" branch -qD side
+reset_world; printf 'p\n' > "$B/areas/p.md"; sync_in B "p" -- areas/p.md
+put_line "$A/STATUS.md" "a stale line"; sync_in A "pull"
+[ "$(rc)" -eq 0 ] && [ -f "$A/areas/p.md" ] && [ "$(git -C "$A" rev-parse HEAD)" = "$(git -C "$W/origin.git" rev-parse main)" ]; v "only a view dirty here, and GitHub moved it: pulled, exit 0" "$W/out"
+reset_world; printf '1\n' > "$A/areas/café.md"; sync_in A "add" -- "areas/café.md"
+put_line "$A/areas/café.md" 2; sync_in A "edit" -- "areas/café.md"
+[ "$(rc)" -eq 0 ] && [ -z "$(git -C "$A" status --porcelain)" ] && [ "$(git -C "$A" rev-parse HEAD)" = "$(git -C "$W/origin.git" rev-parse main)" ]; v "a non-ASCII file name: synced, this tree clean at the tip" "$W/out"
+reset_world; git -C "$A" branch -q --unset-upstream; printf 'u\n' > "$A/areas/u.md"
+sync_in A "u" -- areas/u.md
+[ "$(rc)" -eq 3 ] && said 'main not pushed (no upstream)' && ! on_origin areas/u.md && ! grep -q ' sync: u ' "$A/os/worklog.md"; v "no upstream: PARTIAL, exit 3, no sync receipt" "$W/out"
+git -C "$A" branch -q --set-upstream-to=origin/main
+reset_world; printf 'lit\n' > "$A/areas/[a].md"; printf 'not mine\n' > "$A/areas/a.md"
+sync_in A "literal" -- "areas/[a].md"
+[ "$(rc)" -eq 0 ] && on_origin "areas/[a].md" && ! on_origin areas/a.md; v "paths are literal: [a].md never sweeps in a.md" "$W/out"
+reset_world; put_line "$A/areas/README.md" "SUBDIR-EDIT-7Q"; put_line "$A/README.md" "ROOT-DRAFT-7Q"
+(cd "$A/areas" && /bin/bash ../os/scripts/sync.sh "from areas" -- README.md) > "$W/out" 2>&1; echo $? > "$W/rc"
+[ "$(rc)" -eq 0 ] && origin_file areas/README.md | grep -q SUBDIR-EDIT-7Q && ! origin_file README.md | grep -q ROOT-DRAFT-7Q; v "run from a subdirectory: a relative path is that directory's file" "$W/out"
+reset_world; printf 'g\n' > "$A/areas/gone.md"; printf 'o\n' > "$A/areas/old.md"; sync_in A "add" -- areas/gone.md areas/old.md
+git -C "$A" rm -q areas/gone.md; git -C "$A" mv areas/old.md areas/new.md
+sync_in A "rm and mv" -- areas/gone.md areas/old.md areas/new.md
+[ "$(rc)" -eq 0 ] && ! on_origin areas/gone.md && ! on_origin areas/old.md && on_origin areas/new.md; v "the old names of a git rm and a git mv are accepted" "$W/out"
+reset_world; printf 'stray\n' > "$W/sat/stray.txt"; printf 'X=1\n' > "$A/.env.local"
+sync_in A "env
+SATELLITE-CONFIRMED" -- .env.local
+[ "$(rc)" -eq 2 ] && [ "$(git -C "$W/sat.git" rev-parse main)" = "$SATBASE" ]; v "a path that cannot be staged stops the run before any satellite is pushed" "$W/out"
+rm -f "$A/.env.local"
+reset_world; printf 'o\n' > "$A/areas/o.md"; git -C "$A" remote set-url origin "$W/nowhere.git"
+sync_in A "o" --receipt "test: offline once" -- areas/o.md
+git -C "$A" remote set-url origin "$W/origin.git"
+sync_in A "o" --receipt "test: offline once" -- areas/o.md
+[ "$(rc)" -eq 0 ] && [ "$(origin_file os/worklog.md | grep -c 'test: offline once')" -eq 1 ]; v "rerun after an offline PARTIAL: the receipt is written once" "$W/out"
+reset_world; ln -s README.md "$A/areas/current"; sync_in A "link" -- areas/current
+rm "$A/areas/current"; ln -s ../README.md "$A/areas/current"; sync_in A "relink" -- areas/current
+[ "$(rc)" -eq 0 ] && [ -z "$(git -C "$A" status --porcelain)" ]; v "a changed symlink: synced, this tree clean" "$W/out"
+reset_world; sync_in A "first" --receipt "test: same words twice" --
+put_line "$A/os/worklog.md" "$(grep 'test: same words twice' "$A/os/worklog.md")"
+printf 'd\n' > "$A/areas/d.md"; sync_in A "d" -- areas/d.md
+[ "$(rc)" -eq 0 ] && [ "$(grep -c 'test: same words twice' "$A/os/worklog.md")" -eq 2 ] && [ "$(origin_file os/worklog.md | grep -c 'test: same words twice')" -eq 1 ]; v "another session's pending line that repeats an older one survives" "$W/out"
+reset_world; set_line "$A/os/guard.conf" 1 "ledger_gate=off"; set_line "$A/os/decisions.md" 1 "# Rewritten"
+sync_in A "ledger" -- os/decisions.md
+[ "$(rc)" -eq 1 ] && said 'protected paths changed'; v "an uncommitted ledger_gate=off does not open the ledger gate" "$W/out"
+reset_world; git clone -q "$W/sat.git" "$W/sat#2"; printf '%s\n' "$W/sat#2" > "$A/os/satellites.txt"
+printf 'h\n' > "$W/sat#2/h.txt"; printf 'm\n' > "$A/areas/m.md"
+sync_in A "m
+SATELLITE-CONFIRMED" -- areas/m.md
+[ "$(rc)" -eq 0 ] && git -C "$W/sat.git" cat-file -e main:h.txt; v "a satellite path with # in it is read whole" "$W/out"
+rm -rf "$W/sat#2"
+# Two git stand-ins: a push that loses the race on GitHub's side once, and an
+# interrupt (to sync.sh and the git it runs) just as this tree's files move —
+# SIGTERM, since a test run in the background has SIGINT ignored already.
+REALGIT=$(command -v git); mkdir -p "$W/shim-lock" "$W/shim-int"
+cat > "$W/shim-lock/git" <<EOF
+#!/bin/bash
+if [ "\$1" = -C ] && [ "\$3" = push ] && [ ! -e "$W/shim-lock/lost" ]; then
+  : > "$W/shim-lock/lost"
+  echo "remote: error: cannot lock ref 'refs/heads/main': is at 1111 but expected 2222" >&2
+  echo " ! [remote rejected] HEAD -> main (failed to update ref)" >&2
+  exit 1
+fi
+exec "$REALGIT" "\$@"
+EOF
+cat > "$W/shim-int/git" <<EOF
+#!/bin/bash
+if [ "\$1" = read-tree ] && [ "\$2" = -m ] && [ ! -e "$W/shim-int/hit" ]; then : > "$W/shim-int/hit"; kill -TERM \$PPID; kill -TERM \$\$; sleep 2; fi
+exec "$REALGIT" "\$@"
+EOF
+chmod +x "$W/shim-lock/git" "$W/shim-int/git"
+reset_world; printf 'k\n' > "$A/areas/k.md"
+(cd "$A" && PATH="$W/shim-lock:$PATH" /bin/bash os/scripts/sync.sh "k" -- areas/k.md) > "$W/out" 2>&1; echo $? > "$W/rc"
+[ "$(rc)" -eq 0 ] && [ -e "$W/shim-lock/lost" ] && on_origin areas/k.md; v "a push that lost the race on GitHub's side (cannot lock ref) is retried" "$W/out"
+reset_world; printf 'q\n' > "$A/areas/q.md"
+(cd "$A" && PATH="$W/shim-int:$PATH" /bin/bash os/scripts/sync.sh "q" --receipt "test: q" -- areas/q.md) > "$W/out" 2>&1; echo $? > "$W/rc"
+[ -e "$W/shim-int/hit" ] && [ "$(rc)" -eq 0 ] && [ -z "$(git -C "$A" diff --cached --name-only)" ] && [ "$(git -C "$A" rev-parse HEAD)" = "$(git -C "$W/origin.git" rev-parse main)" ]; v "an interrupt while this tree moves: branch and files still move together" "$W/out"
+reset_world; mkdir -p "$W/sat-hooks"; printf '#!/bin/sh\necho "satellite policy: no commits today" >&2\nexit 1\n' > "$W/sat-hooks/pre-commit"
+chmod +x "$W/sat-hooks/pre-commit"; git -C "$W/sat" config core.hooksPath "$W/sat-hooks"
+printf 'n\n' > "$W/sat/new.md"; printf 'p\n' > "$A/areas/p.md"
+sync_in A "p
+SATELLITE-CONFIRMED" -- areas/p.md
+[ "$(rc)" -eq 3 ] && said 'its commit was refused' && on_origin areas/p.md && [ -z "$(git -C "$W/sat" diff --cached --name-only)" ]; v "a satellite's own hook refuses: skipped, its index as it was, this repo still synced" "$W/out"
+git -C "$W/sat" config --unset core.hooksPath
 # -- Session start -----------------------------------------------------------------
 echo "== session start"
 reset_world; put_line "$B/CLAUDE.md" "a new rule"
