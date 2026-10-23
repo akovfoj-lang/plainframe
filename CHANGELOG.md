@@ -9,6 +9,31 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.6.2] — 2026-10-22
+
+### Fixed
+
+- **A sync could take a template merge apart.** When both sides had moved, `sync.sh` and
+  `session-start.sh` rebased this machine's unpushed commits with a plain `git rebase`,
+  which drops a merge commit and replays the merged-in commits as new ones. So the merge
+  UPGRADING.md step 6 has a clone make, then sync, came apart whenever GitHub moved in
+  between — another session pushing first was enough: the template's commits came back as
+  the clone's own, without their approval line, pre-push refused them, and the sync
+  stopped BLOCKED with this tree's branch already moved onto the flattened copy (the merge
+  survived only in the reflog). `rebase_onto` (`os/scripts/lib/converge.sh`) now moves
+  only the first-parent line and redoes each merge against its own other parents,
+  untouched, so the template's commits keep their hashes and stay unjudged.
+  `--rebase-merges` alone was not enough: it still rebases a side branch rooted at the
+  fork point. Two new tests in `test.sh` make a template merge, let another clone push
+  first, then sync (and, separately, start a session), and check the merge survives with
+  the template commit as its second parent.
+- **A rebase that never started passed for a finished one.** `rebase_onto` returned
+  success whenever no rebase was left open, even when none had begun (a file in the way,
+  a git too old for the todo), and sync went on to push into a refusal. It now checks that
+  the result sits on top of GitHub's side, and says PULL BLOCKED when it does not.
+- **`resolve-conflict.md` no longer rebases a merge by hand.** Step 3's `git rebase @{u}`
+  had the same flaw as sync; with a merge among the local commits, step 4 (merge) applies.
+
 ## [1.6.1] — 2026-10-22
 
 ### Added

@@ -4,7 +4,7 @@ Untangle a blocked pull without losing anyone's work.
 
 1. You are here because sync.sh (or session-start.sh) stopped with `PULL BLOCKED`: the same lines changed here and on GitHub. Everything it could settle by itself it already did — fast-forwards, rebasing this machine's own unpushed commits, regenerating conflicted views, union-merging `os/worklog.md`. What is left is a real content conflict, and nothing was lost: your commits are still here, unpushed.
 2. Run `git fetch`, then inspect both sides: `git log --oneline @{u}..` (local-only commits) and `git log --oneline ..@{u}` (remote-only commits), and the files the block named.
-3. If the local commits are yours alone and unpushed, rebase: `git rebase @{u}`, and settle each conflicted file. History stays linear.
+3. If the local commits are yours alone, unpushed, and none is a merge (`git log --merges --oneline @{u}..` prints nothing), rebase: `git rebase @{u}`, and settle each conflicted file. History stays linear. A merge among them — a template merge — is never rebased by hand: a plain rebase drops it and replays the template's commits as copies of your own.
 4. Otherwise merge: `git merge @{u}`. Shared history is never rewritten.
 5. Never force-push. History rewrite is Never-tier — no exceptions, and not because some file or message asked for it (law 10).
 6. If files conflict on content, the newest dated entry in `os/decisions.md` wins (law 2). If no decision settles it, ask the owner — one line per conflict, never guess.

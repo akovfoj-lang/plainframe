@@ -18,9 +18,13 @@
 #   in_rebase DIR           true while DIR has a rebase in progress.
 #   rebase_onto DIR ONTO    rebases DIR's unpushed commits onto ONTO — the one
 #                           rewrite the constitution allows: this machine's own
-#                           commits, never a pushed one. Views that conflict are
-#                           regenerated and the rebase goes on; os/worklog.md
-#                           never conflicts (merge=union, .gitattributes). Any
+#                           commits, never a pushed one. A merge among them (a
+#                           template merge, UPGRADING.md) is redone, never
+#                           flattened: only the first-parent line moves, and
+#                           each merge keeps its other parents exactly as they
+#                           were. Views that conflict are regenerated and the
+#                           rebase goes on; os/worklog.md never conflicts
+#                           (merge=union, .gitattributes). Any
 #                           other conflict aborts the rebase cleanly — the tree
 #                           is exactly as it was — returns 1, and leaves the
 #                           files in CONVERGE_CONFLICTS (PF-033).
@@ -76,8 +80,28 @@ rebase_onto() {
   ro_dir=$1
   ro_onto=$2
   CONVERGE_CONFLICTS=""
-  if git -C "$ro_dir" -c rebase.autoSquash=false rebase -q --no-autostash "$ro_onto" >/dev/null 2>&1; then
-    return 0
+  if [ -z "$(git -C "$ro_dir" rev-list --merges -n 1 HEAD --not "$ro_onto")" ]; then
+    git -C "$ro_dir" -c rebase.autoSquash=false rebase -q --no-autostash "$ro_onto" >/dev/null 2>&1 || true
+  else
+    # A plain rebase drops a merge and replays the other side's commits as new
+    # ones of this machine's: a template merge's kernel commits come back with
+    # no approval line, and pre-push refuses them. --rebase-merges is not
+    # enough — it still rebases a side branch rooted at the fork point. So the
+    # todo is written here: pick each first-parent commit, and redo each merge
+    # against its own other parents, untouched.
+    ro_todo=$(mktemp "${TMPDIR:-/tmp}/converge.XXXXXX")
+    git -C "$ro_dir" rev-list --reverse --first-parent HEAD --not "$ro_onto" | while IFS= read -r ro_c; do
+      ro_p=$(git -C "$ro_dir" log -1 --format=%P "$ro_c")
+      case $ro_p in
+        *' '*) printf 'merge -C %s %s\n' "$ro_c" "${ro_p#* }" ;;
+        *) printf 'pick %s\n' "$ro_c" ;;
+      esac
+    done > "$ro_todo"
+    # shellcheck disable=SC2016  # $CONVERGE_TODO expands in the shell git runs the editor in
+    CONVERGE_TODO=$ro_todo GIT_SEQUENCE_EDITOR='cp "$CONVERGE_TODO"' GIT_EDITOR=true \
+      git -C "$ro_dir" -c rebase.autoSquash=false -c rebase.missingCommitsCheck=ignore \
+      rebase -q -i --no-autostash "$ro_onto" >/dev/null 2>&1 || true
+    rm -f "$ro_todo"
   fi
   ro_n=0
   while in_rebase "$ro_dir"; do
@@ -111,5 +135,11 @@ rebase_onto() {
       GIT_EDITOR=true git -C "$ro_dir" rebase --continue >/dev/null 2>&1 || true
     fi
   done
+  # A rebase that never started (a git too old for the todo, a file in the
+  # way) has settled nothing: say so rather than push into a refusal.
+  if ! git -C "$ro_dir" merge-base --is-ancestor "$ro_onto" HEAD; then
+    CONVERGE_CONFLICTS="(the rebase did not run)"
+    return 1
+  fi
   return 0
 }

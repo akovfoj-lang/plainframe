@@ -233,6 +233,19 @@ git -C "$A" merge -q --no-ff -m "merge: template update
 OWNER-CONFIRMED" template/main && git -C "$A" push -q origin HEAD:main; v "approved template merge: the upstream commit is not re-judged, push accepted"
 reset_world; git -C "$A" merge -q --no-ff --no-verify -m "merge: no approval" template/main
 ! git -C "$A" push -q origin HEAD:main 2>/dev/null; v "template merge with no approval line: push refused"
+# UPGRADING.md step 6: merge, then sync — while another session pushes first.
+tpl=$(git -C "$A" rev-parse template/main)
+reset_world; git -C "$A" merge -q --no-ff -m "merge: template update
+OWNER-CONFIRMED" template/main
+printf 'b\n' > "$B/areas/b.md"; sync_in B "b" -- areas/b.md
+sync_in A "template merged" --receipt "test: template merged" --
+m=$(git -C "$W/origin.git" rev-list --merges -n 1 main)
+[ "$(rc)" -eq 0 ] && [ -n "$m" ] && [ "$(git -C "$W/origin.git" rev-parse "$m^2")" = "$tpl" ] && on_origin areas/b.md; v "template merge, then GitHub moved: sync keeps the merge, the template commit its second parent" "$W/out"
+reset_world; git -C "$A" merge -q --no-ff -m "merge: template update
+OWNER-CONFIRMED" template/main
+printf 'b\n' > "$B/areas/b.md"; sync_in B "b" -- areas/b.md
+(cd "$A" && /bin/bash os/scripts/session-start.sh) > "$W/out" 2>&1
+said 'rebased' && [ "$(git -C "$A" rev-parse HEAD^2 2>/dev/null)" = "$tpl" ] && git -C "$A" merge-base --is-ancestor origin/main HEAD; v "template merge, then GitHub moved: session start keeps the merge too" "$W/out"
 git -C "$A" remote remove template
 # -- Sync: satellites --------------------------------------------------------------
 echo "== sync: satellites"

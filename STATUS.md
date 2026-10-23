@@ -41,6 +41,6 @@ _Snapshot from the last regen, not live — branch/dirty/unpushed below are only
 as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)
 for the real-time state._
 
-- branch: ci/check-workflow
+- branch: fix/sync-keeps-merges
 - dirty files: 5 (generated views excluded)
 - unpushed commits: (no upstream)
