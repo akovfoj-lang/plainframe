@@ -17,8 +17,10 @@
 #
 #   SECRET_PATTERN is the fallback when gitleaks is absent: a grep for the key
 #   shapes an owner of this template is most likely to paste — AWS access
-#   keys, PEM private-key headers, Slack, Anthropic, OpenAI, GitHub and Google
-#   API keys. It only warns: a regex this simple misfires too easily to block.
+#   keys (long-lived and temporary), private-key headers, Slack tokens and
+#   webhook URLs, Anthropic, OpenAI, GitHub and Google keys and tokens. A key
+#   must start a word, so a long kebab-case name like "task-queue-..." is not
+#   one. It only warns: a regex this simple misfires too easily to block.
 #
 # Provides:
 #
@@ -31,9 +33,12 @@
 #   staged_secret_hits      prints every staged ADDED line (git diff --cached,
 #                           file-header lines excluded) that matches
 #                           SECRET_PATTERN; prints nothing if there are none.
-#                           Never fails.
+#                           Never fails. The diff is plain whatever the user's
+#                           config (colour, external diff, textconv), and a
+#                           header is told apart from an added line that
+#                           starts with "++" by where it stands, not its text.
 
-SECRET_PATTERN='AKIA[0-9A-Z]{16}|-----BEGIN[A-Z ]*PRIVATE KEY-----|xox[baprs]-[0-9A-Za-z-]{10,}|sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9_-]{32,}|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,}|AIza[0-9A-Za-z_-]{35}'
+SECRET_PATTERN='(^|[^A-Za-z0-9_-])((AKIA|ASIA)[0-9A-Z]{16}|xox[baprs]-[0-9A-Za-z-]{10,}|xapp-[0-9A-Za-z-]{10,}|sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9_-]{32,}|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,}|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]{20,})|-----BEGIN[A-Z ]*PRIVATE KEY|hooks\.slack\.com/services/[A-Za-z0-9/]{20,}'
 
 secrets_scanner() {
   if [ "${PLAINFRAME_GITLEAKS:-on}" != off ] && command -v gitleaks >/dev/null 2>&1; then
@@ -48,5 +53,7 @@ staged_secret_scan() {
 }
 
 staged_secret_hits() {
-  git diff --cached -U0 -- . 2>/dev/null | grep -E '^\+' | grep -vE '^\+\+\+' | grep -E "$SECRET_PATTERN" || true
+  git diff --cached --no-color --no-ext-diff --no-textconv -U0 -- . 2>/dev/null \
+    | awk '/^diff --git / { hdr = 1; next } /^@@/ { hdr = 0; next } !hdr && /^\+/' \
+    | grep -E "$SECRET_PATTERN" || true
 }

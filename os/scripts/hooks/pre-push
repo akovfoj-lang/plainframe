@@ -11,9 +11,13 @@
 # line. A merge is judged by what it changes against its first parent, so a
 # template merge that brings in kernel changes needs the token on the merge.
 #
-# Commits any remote already holds (origin/*, template/*) are not judged again:
-# they were checked where they were made, and history from before this hook
-# existed must not block every future push.
+# Commits any configured remote already holds (origin/*, template/*) are not
+# judged again: they were checked where they were made, and history from
+# before this hook existed must not block every future push. Only the
+# tracking refs of a remote `git remote` lists count, never a stray ref under
+# refs/remotes/. A clone with none at all (the first push of a new repo, or
+# after `git remote remove`) cannot tell old history from new, so all of it
+# is judged; the advice below says how through.
 #
 # Wired by the same core.hooksPath as the others: os/scripts/doctor.sh --setup
 # Bypass once (owner's call): git push --no-verify — break-glass only.
@@ -28,20 +32,23 @@ trap 'rm -rf "$TMP"' EXIT
 # shellcheck source=../lib/guard.sh
 . "$ROOT/os/scripts/lib/guard.sh"
 
+set --
+for r in $(git remote); do set -- "$@" "--remotes=$r"; done
+
 : > "$TMP/bad"
 while read -r _lref lsha _rref _rsha; do
   case $lsha in *[!0]*) ;; *) continue ;; esac   # all zeros: a branch delete
-  git rev-list "$lsha" --not --remotes > "$TMP/revs"
+  git rev-list "$lsha" --not "$@" > "$TMP/revs"
   while IFS= read -r c; do
     if git rev-parse -q --verify "$c^1" >/dev/null; then base="$c^1"; else base=""; fi
     if [ -n "$base" ]; then
       # shellcheck disable=SC2086
-      git diff --name-only "$base" "$c" -- $PROTECTED_PATHS > "$TMP/files"
+      git diff --name-only --ignore-submodules=none "$base" "$c" -- $PROTECTED_PATHS > "$TMP/files"
     else
       # shellcheck disable=SC2086
-      git diff-tree --no-commit-id --name-only -r --root "$c" -- $PROTECTED_PATHS > "$TMP/files"
+      git diff-tree --no-commit-id --name-only -r --root --ignore-submodules=none "$c" -- $PROTECTED_PATHS > "$TMP/files"
     fi
-    if [ "$LEDGER_GATE" != off ] && git diff --quiet "${base:-4b825dc642cb6eb9a060e54bf8d69288fbee4904}" "$c" -- os/decisions.md; then
+    if [ "$LEDGER_GATE" != off ] && git diff --quiet "${base:-$EMPTY_TREE}" "$c" -- os/decisions.md; then
       :
     elif [ "$LEDGER_GATE" != off ]; then
       if [ -n "$base" ] && git cat-file -e "$base:os/decisions.md" 2>/dev/null; then
@@ -66,11 +73,18 @@ done
 if [ -s "$TMP/bad" ]; then
   echo "BLOCKED: these commits change protected paths but their stored message has no approval line (law 7):" >&2
   cat "$TMP/bad" >&2
-  cat >&2 <<'EOF'
-Nothing was pushed. With the owner's explicit in-session yes, reword each one so
-its message has OWNER-CONFIRMED as its own line — they are unpushed, so this is
-your own history to fix: `git commit --amend` for the newest, a rebase onto
-@{u} with each marked reword for older ones.
+  if git rev-parse -q --verify '@{u}' >/dev/null 2>&1; then
+    older='a `git rebase -i @{u}`'
+  else
+    older='a `git rebase -i --root` (this branch has no upstream yet)'
+  fi
+  cat >&2 <<EOF
+Nothing was pushed. If these commits are already on another remote of yours (an
+old origin, the template), \`git fetch\` that remote first: commits a remote holds
+are not judged again. Otherwise, with the owner's explicit in-session yes, reword
+each one so its message has OWNER-CONFIRMED as its own line — they are unpushed,
+so this is your own history to fix: \`git commit --amend\` for the newest, and
+$older with each marked reword for older ones.
 EOF
   exit 1
 fi

@@ -31,6 +31,12 @@ if ! git rev-parse --git-dir >/dev/null 2>&1; then
   echo "FAIL: not a git repo — clone your copy of the template first"
   exit 1
 fi
+# Inside another repo, git would answer for that one, and --setup would wire
+# ITS hooks.
+if [ -n "$(git rev-parse --show-prefix)" ]; then
+  echo "FAIL: this copy is not a git repo of its own (it sits inside $(git rev-parse --show-toplevel)) — clone your copy of the template first"
+  exit 1
+fi
 
 HOOKS="pre-commit commit-msg pre-push"
 

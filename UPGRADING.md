@@ -57,6 +57,18 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.6.3 to 1.6.4
+
+- **More counts as protected.** A `CLAUDE.md`, `AGENTS.md`, `.gitignore` or
+  `.gitattributes` in any folder, and any protected path in another letter case, now needs
+  `OWNER-CONFIRMED`, like the root ones. A clone with no such nested files sees no change.
+- **With `ledger_gate=append-only`, a new ledger entry needs `**Status:** draft`,
+  spelled exactly so** — the spelling DESK lists as waiting. Any other Status line, or an
+  entry with none, needs the token. With `ledger_gate=off` nothing changes.
+- **An amend is judged against its parent.** Fixing your own unpushed draft no longer
+  needs the token; an amend that drops an approval is refused at commit time instead of at
+  push.
+
 ## Coming from 1.6.2 to 1.6.3
 
 - **A second workflow arrives, switched off.** `.github/workflows/check-private.yml` runs

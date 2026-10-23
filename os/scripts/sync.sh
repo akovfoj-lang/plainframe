@@ -192,7 +192,7 @@ T=$(GIT_INDEX_FILE="$TMP/index" git write-tree)
 # -- Protected-path gate: what this commit changes, judged on the trees -------
 # Without renames, a staged git mv of a protected file is the delete it also is.
 # shellcheck disable=SC2086
-git diff --no-renames --name-status "$O" "$T" -- $PROTECTED_PATHS > "$TMP/prot"
+git diff --no-renames --name-status --ignore-submodules=none "$O" "$T" -- $PROTECTED_PATHS > "$TMP/prot"
 if ! git diff --quiet "$O" "$T" -- os/decisions.md; then
   git cat-file -p "$O:os/decisions.md" > "$TMP/ledger-old" 2>/dev/null || : > "$TMP/ledger-old"
   git cat-file -p "$T:os/decisions.md" > "$TMP/ledger-new" 2>/dev/null || : > "$TMP/ledger-new"

@@ -92,6 +92,10 @@ Changing any of these is Ask-first (law 7) — agents draft, the owner enacts:
 - the autonomy table above
 - permissions and `.env` scope
 
+Letter case never matters, and `CLAUDE.md`, `AGENTS.md`, `.gitignore` and `.gitattributes`
+count at any depth: agents load a nested `CLAUDE.md` as instructions, and a nested
+`.gitignore` can un-ignore a secret.
+
 Enforced mechanically, not just by prose, at three layers: `sync.sh` checks
 first (fast, friendly message); `os/scripts/hooks/commit-msg` checks again at
 the git level, so a raw `git commit` on any of these — bypassing sync

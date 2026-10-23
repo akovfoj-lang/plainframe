@@ -16,6 +16,11 @@
 # line, or a new entry that already claims "**Status:** confirmed", needs the
 # token (PF-005).
 #
+# An amend replaces HEAD, so it is judged against HEAD's parent, as pre-push
+# will judge the stored commit: fixing your own unpushed draft is still a pure
+# append, and an amend that drops an approval is caught here. git tells a hook
+# nothing about --amend; the command line of the git that runs it does.
+#
 # What this hook cannot see — an approval line amended away later, or a
 # commit made with --no-verify — the pre-push hook catches before it leaves
 # the machine (PF-037).
@@ -45,13 +50,20 @@ if owner_confirmed "$MSG"; then
   exit 0
 fi
 
+BASE=HEAD
+git rev-parse -q --verify HEAD >/dev/null || BASE=$EMPTY_TREE
+case " $(ps -o args= -p "$PPID" 2>/dev/null || true) " in
+  *" --amend "*|*" --amen "*|*" --ame "*|*" --am "*)
+    if git rev-parse -q --verify 'HEAD^1' >/dev/null; then BASE='HEAD^1'; else BASE=$EMPTY_TREE; fi ;;
+esac
+
 : > "$TMP/prot"
 # shellcheck disable=SC2086
-git diff --cached --name-only -- $PROTECTED_PATHS >> "$TMP/prot" || true
-if [ "$LEDGER_GATE" != off ] && [ -n "$(git diff --cached --name-only -- os/decisions.md)" ]; then
+git diff --cached --name-only --ignore-submodules=none "$BASE" -- $PROTECTED_PATHS >> "$TMP/prot" || true
+if [ "$LEDGER_GATE" != off ] && [ -n "$(git diff --cached --name-only "$BASE" -- os/decisions.md)" ]; then
   OLD_LEDGER="$TMP/ledger-old"
-  if git cat-file -e HEAD:os/decisions.md 2>/dev/null; then
-    git show HEAD:os/decisions.md > "$OLD_LEDGER"
+  if git cat-file -e "$BASE:os/decisions.md" 2>/dev/null; then
+    git show "$BASE:os/decisions.md" > "$OLD_LEDGER"
   else
     : > "$OLD_LEDGER"
   fi

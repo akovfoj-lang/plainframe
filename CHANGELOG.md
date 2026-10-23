@@ -9,6 +9,61 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.6.4] — 2026-10-23
+
+A second independent review, of the git hooks and the guard logic (`hooks/pre-commit`,
+`hooks/commit-msg`, `hooks/pre-push`, `lib/guard.sh`, `lib/secrets.sh`, `doctor.sh
+--setup`), run in a clone with no remote, reproduced 15 bugs, each with a script that
+showed it. All 15 are fixed, and each has a test in `test.sh` (96 tests, up from 80). On
+1.6.3, the new tests fail and the old ones still pass.
+
+### Fixed — could let a guard through
+
+- **An uncommitted `ledger_gate=off` switched the ledger gate off** for the hooks, at
+  commit and at push. They now read the committed `os/guard.conf`, as `sync.sh` already did.
+- **The ledger gate knew one spelling.** Only `**Status:** confirmed` was refused, so
+  `Status: confirmed` (the template's own wording), `Confirmed`, or no Status line at all
+  passed as a draft. Now every appended entry must carry `**Status:** draft`, the
+  spelling DESK lists as waiting, and any other Status line needs the token.
+- **A Status line split over two appends passed**: `**Stat` in one commit, `us:**
+  confirmed` in the next. An append that continues an unfinished last line is now judged
+  with that line.
+- **A nested `.gitignore`, `.gitattributes`, `CLAUDE.md` or `AGENTS.md` was not
+  protected**, so `areas/.gitignore` with `!.env` let a `.env` through with no token.
+  They now count at any depth.
+- **A protected path in another letter case was not protected**: `.GitHub/workflows/x.yml`
+  passed every hook, and on macOS it lands in `.github/workflows/`. Matching ignores case.
+- **`core.commentChar=auto` (or `core.commentString`) hid the `-v` scissors line** from
+  commit-msg, so a diff line that was only the token approved a protected edit. The
+  scissors line is now found whatever its comment prefix.
+- **`diff.ignoreSubmodules=all` in your git config hid a gitlink** at a protected path
+  from every hook. The hooks and `sync.sh` now always count submodules.
+- **pre-push trusted any ref under `refs/remotes/`**, even one no remote owns. Only the
+  tracking refs of a configured remote exempt a commit now.
+- **The fallback secret scan went blind with `color.ui=always`**, and **skipped any added
+  line that starts with `++`**. The diff is now always plain, and file headers are told
+  apart by where they stand.
+
+### Fixed — wrongly blocked, or a misleading message
+
+- **On macOS, one invalid UTF-8 byte in a commit message hid the approval line** below it
+  (BSD sed stops at the bad byte in a UTF-8 locale). The token check now reads bytes.
+- **Amending your own unpushed draft needed the token**: commit-msg judged an amend
+  against the commit it replaces. It now judges against that commit's parent, as pre-push
+  does, which also catches an amend that drops an approval at commit time.
+- **The first push from a clone with no remote-tracking refs told you to rebase onto
+  `@{u}`**, which does not exist yet. The push is still judged in full (the hook cannot
+  tell old history from new), but the advice now fits: fetch the remote that already holds
+  those commits, or `git rebase -i --root`.
+- **The fallback scan warned on ordinary long kebab-case names** like
+  `task-queue-design-notes-…` (the `sk-` key shape had no left edge). A key must now start
+  a word. It also knows more shapes in its own families: temporary AWS keys (`ASIA`),
+  Slack app tokens and webhook URLs, Google `ya29.` tokens, PGP private keys.
+- **`doctor.sh --setup` in a copy sitting inside another repo wired that repo's hooks.**
+  It now refuses, as it does outside any repo.
+- A root commit's ledger check used SHA-1's empty tree by name; it now asks git, so a
+  SHA-256 repo works too.
+
 ## [1.6.3] — 2026-10-23
 
 An independent review of `sync.sh` and `lib/converge.sh`, run in a clone with no remote,

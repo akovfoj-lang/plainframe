@@ -122,7 +122,7 @@ n=$(wc -l < "$A/CLAUDE.md"); set_line "$A/CLAUDE.md" "$n" "b2"
 reset_world; put_line "$A/CLAUDE.md" x
 git -C "$A" commit -qam "edit
 OWNER-CONFIRMED"
-git -C "$A" commit -q --amend -m "edit, approval amended away" 2>/dev/null
+git -C "$A" commit -q --amend --no-verify -m "edit, approval amended away"
 ! git -C "$A" push -q origin HEAD:main; v "approval amended away: push refused"
 reset_world; put_line "$A/CLAUDE.md" x
 git -C "$A" commit -q --no-verify -am "edit with --no-verify"
@@ -386,6 +386,56 @@ sync_in A "p
 SATELLITE-CONFIRMED" -- areas/p.md
 [ "$(rc)" -eq 3 ] && said 'its commit was refused' && on_origin areas/p.md && [ -z "$(git -C "$W/sat" diff --cached --name-only)" ]; v "a satellite's own hook refuses: skipped, its index as it was, this repo still synced" "$W/out"
 git -C "$W/sat" config --unset core.hooksPath
+# -- Hooks: hard cases -----------------------------------------------------------
+echo "== hooks: hard cases"
+reset_world; printf 'ledger_gate=off\n' > "$A/os/guard.conf"; set_line "$A/os/decisions.md" 1 "# Decisions, edited"
+regen "$A"; git -C "$A" add -A; git -C "$A" reset -q -- os/guard.conf
+! git -C "$A" commit -qm edit 2>/dev/null; v "ledger gate: an uncommitted 'off' never judges the commit"
+git -C "$A" checkout -q -- os/guard.conf
+reset_world; printf '\n## 2026-01-02 — self-confirmed\n\nStatus: confirmed\n\nbody\n' >> "$A/os/decisions.md"; regen "$A"; git -C "$A" add -A
+! git -C "$A" commit -qm entry 2>/dev/null; v "ledger gate: an appended entry that is not a draft, in any spelling, needs the token"
+reset_world; printf '\n## 2026-01-03 — split\n\n**Status:** draft\n\n**Stat' >> "$A/os/decisions.md"; regen "$A"; git -C "$A" add -A
+git -C "$A" commit -qm one 2>/dev/null; printf 'us:** confirmed\n' >> "$A/os/decisions.md"; regen "$A"; git -C "$A" add -A
+! git -C "$A" commit -qm two 2>/dev/null; v "ledger gate: a Status line split over two appends is judged whole"
+reset_world; printf '!.env\n' > "$A/areas/.gitignore"; printf 'K=v\n' > "$A/areas/.env"; regen "$A"; git -C "$A" add -A
+! git -C "$A" commit -qm nested 2>/dev/null; v "a nested .gitignore is protected like the root one"
+reset_world; printf 'a\nOWNER-CONFIRMED\nb\n' >> "$A/CLAUDE.md"
+git -C "$A" commit -qam "seed a token-only line
+OWNER-CONFIRMED"
+n=$(wc -l < "$A/CLAUDE.md"); set_line "$A/CLAUDE.md" "$n" "b2"
+! env GIT_EDITOR=true git -C "$A" -c core.commentChar=auto commit -q -v -e -am "#tweak" 2>/dev/null; v "core.commentChar=auto: the token only in the -v diff is still refused"
+reset_world; git init -q --bare "$W/empty.git"; git clone -q "$W/origin.git" "$W/C"; git -C "$W/C" config core.hooksPath os/scripts/hooks
+git -C "$W/C" remote remove origin; git -C "$W/C" remote add origin "$W/empty.git"
+! git -C "$W/C" push -q -u origin main 2> "$W/err" && grep -q -- '--root' "$W/err" && grep -q 'git fetch' "$W/err" && ! grep -qF '@{u}' "$W/err"; v "first push with no remote-tracking refs: the advice fits a branch with no upstream" "$W/err"
+rm -rf "$W/C" "$W/empty.git"
+reset_world; put_line "$A/CLAUDE.md" x; printf 'fix caf\351 handling\n\nOWNER-CONFIRMED\n' > "$W/msg"
+LC_ALL=en_US.UTF-8 git -C "$A" commit -q -a -F "$W/msg" 2>/dev/null; v "an invalid UTF-8 line never hides the approval line below it"
+reset_world; printf 'a = %s\n' "$aws" >> "$A/os/roadmap.md"; git -C "$A" add -A
+git -C "$A" -c color.ui=always commit -qm "secret-shaped" 2> "$W/err"; grep -q WARN "$W/err"; v "no gitleaks: the warning holds with color.ui=always" "$W/err"
+reset_world; printf 'k = ASIA%s\n++ s = xapp-1-A%s\n' "$(rand 16 | tr 'a-z' 'A-Z')" "$(rand 24)" >> "$A/os/roadmap.md"; git -C "$A" add -A
+git -C "$A" commit -qm "more shapes" 2> "$W/err"; grep -q 'ASIA' "$W/err" && grep -q 'xapp-' "$W/err"; v "no gitleaks: temporary AWS keys and a '++' line with a Slack app token warn" "$W/err"
+reset_world; printf '[notes](areas/task-queue-design-notes-for-the-weekly-planning-review.md)\n' >> "$A/os/roadmap.md"; git -C "$A" add -A
+git -C "$A" commit -qm "a long link" 2> "$W/err"; ! grep -q WARN "$W/err"; v "no gitleaks: a long kebab-case link is not a secret" "$W/err"
+mkdir -p "$W/outer/pf"; git -C "$W/outer" init -q; (cd "$W/seed" && tar -cf - --exclude .git .) | (cd "$W/outer/pf" && tar -xf -)
+(cd "$W/outer/pf" && /bin/bash os/scripts/doctor.sh --setup) > "$W/out" 2>&1; r=$?
+[ "$r" -ne 0 ] && [ -z "$(git -C "$W/outer" config core.hooksPath)" ]; v "doctor --setup inside another repo: refuses and leaves its hooks alone" "$W/out"
+rm -rf "$W/outer"
+reset_world; blob=$(printf 'on: push\n' | git -C "$A" hash-object -w --stdin)
+git -C "$A" update-index --add --cacheinfo "100644,$blob,.GitHub/workflows/x.yml"
+! git -C "$A" commit -qm "case variant" 2> "$W/err" && grep -q 'protected path' "$W/err"; v "a protected path in another letter case is protected" "$W/err"
+reset_world; printf '\n## 2026-01-04 — a draft to fix\n\n**Status:** draft\n\nbody with a tpyo\n' >> "$A/os/decisions.md"; regen "$A"; git -C "$A" add -A
+git -C "$A" commit -qm draft; n=$(wc -l < "$A/os/decisions.md"); set_line "$A/os/decisions.md" "$n" "body with a typo"; regen "$A"; git -C "$A" add -A
+git -C "$A" commit -q --amend --no-edit 2> "$W/err"; v "an amend is judged against its parent: fixing your own unpushed draft passes" "$W/err"
+reset_world; put_line "$A/CLAUDE.md" x
+git -C "$A" commit -qam "edit
+OWNER-CONFIRMED"
+! git -C "$A" commit -q --amend -m "edit, approval amended away" 2>/dev/null; v "an amend that drops the approval is refused at commit time"
+reset_world; git -C "$A" update-index --add --cacheinfo "160000,$(git -C "$A" rev-parse HEAD),os/scripts/vendored"
+! git -C "$A" -c diff.ignoreSubmodules=all commit -qm gitlink 2>/dev/null; v "diff.ignoreSubmodules=all never hides a gitlink at a protected path"
+reset_world; put_line "$A/CLAUDE.md" x; git -C "$A" commit -q --no-verify -am "unapproved"
+git -C "$A" update-ref refs/remotes/nowhere/main HEAD
+! git -C "$A" push -q origin HEAD:main 2>/dev/null; v "pre-push: a ref under refs/remotes/ that no configured remote owns exempts nothing"
+git -C "$A" update-ref -d refs/remotes/nowhere/main
 # -- Session start -----------------------------------------------------------------
 echo "== session start"
 reset_world; put_line "$B/CLAUDE.md" "a new rule"

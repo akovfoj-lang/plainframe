@@ -6,12 +6,26 @@
 #
 # Sourced, not executed, from the repo root (callers cd there first). Provides:
 #
-#   PROTECTED_PATHS   space-separated pathspecs (word-split on purpose; none
-#                     of these contain spaces). os/decisions.md is not in this
+#   PROTECTED_NAMES   the protected paths in plain words, space-separated,
+#                     for anything that compares paths itself; it must fold
+#                     letter case and resolve symlinks first, as the hooks'
+#                     pathspecs do the first.
+#   PROTECTED_ANYWHERE  the names that count at any depth: agents load a
+#                     nested CLAUDE.md or AGENTS.md as instructions, and a
+#                     nested .gitignore can un-ignore .env.
+#   PROTECTED_PATHS   the same list as git pathspecs, word-split on purpose
+#                     (none contains a space, and none starts with a name the
+#                     shell's globbing could match). Letter case never
+#                     matters: on a case-insensitive disk a `.GitHub/` entry
+#                     lands in `.github/`. os/decisions.md is not in this
 #                     list: how the ledger is gated is the owner's setting,
 #                     LEDGER_GATE below.
 #
-#   LEDGER_GATE       `ledger_gate=` in os/guard.conf (itself protected):
+#   EMPTY_TREE        the empty tree's id in this repo's hash, the base a
+#                     root commit is judged against.
+#
+#   LEDGER_GATE       `ledger_gate=` in the COMMITTED os/guard.conf (itself
+#                     protected; an uncommitted edit never judges a commit):
 #                       append-only  template default — a pure append of draft
 #                                    entries passes; anything else needs the
 #                                    token (PF-005)
@@ -39,7 +53,10 @@
 #                       `git commit -v` puts above its diff and drops comment
 #                       lines. commit-msg sees the raw file before git cleans
 #                       it, so without this a diff line that was nothing but
-#                       the token passed as an approval (PF-036).
+#                       the token passed as an approval (PF-036). The scissors
+#                       line is found whatever its comment prefix: with
+#                       core.commentChar=auto git picks one this hook cannot
+#                       know.
 #
 #   owner_confirmed MSG      has_token MSG OWNER-CONFIRMED
 #   satellite_confirmed MSG  has_token MSG SATELLITE-CONFIRMED
@@ -50,9 +67,14 @@
 #                       count via `wc -l` undercounts a file whose last line
 #                       has no trailing newline, which used to false-block a
 #                       legit append onto such a file; comparing by exact
-#                       byte length has no such edge case), and nothing added
-#                       after that prefix declares itself "**Status:**
-#                       confirmed" (an agent cannot self-confirm — law 2/7).
+#                       byte length has no such edge case), and what was added
+#                       is draft and nothing else: every new `## ` entry has a
+#                       `**Status:** draft` line, the spelling gen-desk.sh
+#                       lists as waiting, and no added line is any other
+#                       Status line, in any spelling (an agent cannot
+#                       self-confirm — law 2/7). An append that continues a
+#                       last line with no newline is judged with that line,
+#                       so a Status line split over two appends is seen whole.
 #                       A diff's +/- summary alone cannot tell a true
 #                       end-of-file append from a mid-entry insertion that
 #                       git's LCS matcher happens to render as pure additions
@@ -63,11 +85,17 @@
 #   ledger_needs_token OLD NEW   true when the gate is on and NEW is not a
 #                       pure append onto OLD.
 
-PROTECTED_PATHS='CLAUDE.md AGENTS.md os/scripts os/playbooks os/commands.md os/guard.conf .gitignore .gitattributes os/satellites.txt .claude/settings.json .github/workflows'
+PROTECTED_NAMES='CLAUDE.md AGENTS.md os/scripts os/playbooks os/commands.md os/guard.conf .gitignore .gitattributes os/satellites.txt .claude/settings.json .github/workflows'
+PROTECTED_ANYWHERE='CLAUDE.md AGENTS.md .gitignore .gitattributes'
+PROTECTED_PATHS=
+for gp_name in $PROTECTED_NAMES; do PROTECTED_PATHS="$PROTECTED_PATHS :(icase)$gp_name"; done
+for gp_name in $PROTECTED_ANYWHERE; do PROTECTED_PATHS="$PROTECTED_PATHS :(glob,icase)**/$gp_name"; done
 
-# read_ledger_gate FILE — sets LEDGER_GATE from a guard.conf. sync.sh reads
-# the committed one (HEAD:os/guard.conf): an uncommitted edit to a protected
-# setting must not be what judges the commit.
+EMPTY_TREE=$(git hash-object -t tree /dev/null)
+
+# read_ledger_gate FILE — sets LEDGER_GATE from a guard.conf. Callers pass the
+# committed one: an uncommitted edit to a protected setting must not be what
+# judges the commit.
 read_ledger_gate() {
   LEDGER_GATE=append-only
   if [ -f "$1" ]; then
@@ -75,20 +103,27 @@ read_ledger_gate() {
     case $lg_val in off|append-only) LEDGER_GATE=$lg_val ;; esac
   fi
 }
-read_ledger_gate os/guard.conf
+gp_conf=$(mktemp "${TMPDIR:-/tmp}/guard-conf.XXXXXX")
+git cat-file -p HEAD:os/guard.conf > "$gp_conf" 2>/dev/null || : > "$gp_conf"
+read_ledger_gate "$gp_conf"
+rm -f "$gp_conf"
 
 has_token() {
   ht_msg=$1
   ht_tok=$2
-  printf '%s\n' "$ht_msg" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
-    | grep -qxF "$ht_tok"
+  # Bytes, not characters: in a UTF-8 locale BSD sed stops at the first
+  # invalid byte and hides every line after it.
+  printf '%s\n' "$ht_msg" | LC_ALL=C sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+    | LC_ALL=C grep -qxF "$ht_tok"
 }
 
 clean_msg() {
-  cm_cc=$(git config core.commentChar 2>/dev/null || true)
+  # core.commentString is git 2.45's longer name for core.commentChar; the
+  # last one set wins.
+  cm_cc=$(git config --get-regexp '^core\.comment(char|string)$' 2>/dev/null | tail -n 1 | sed 's/^[^ ]* //')
   case $cm_cc in ''|auto) cm_cc='#' ;; esac
-  awk -v cc="$cm_cc" '
-    $0 == cc " ------------------------ >8 ------------------------" { exit }
+  LC_ALL=C awk -v cc="$cm_cc" '
+    /^[^ \t]+ ------------------------ >8 ------------------------\r?$/ { exit }
     index($0, cc) == 1 { next }
     { print }' "$1"
 }
@@ -114,11 +149,18 @@ ledger_append_only() {
     fi
     rm -f "$lao_tmp"
   fi
-  if tail -c "+$((lao_old_size + 1))" "$lao_new" 2>/dev/null \
-      | grep -E '\*\*Status:\*\*[[:space:]]*confirmed' >/dev/null 2>&1; then
-    return 1
-  fi
-  return 0
+  # What was added, with OLD's unfinished last line when the append continues it.
+  if [ "$lao_old_size" -gt 0 ] && [ -n "$(tail -c 1 "$lao_old")" ] \
+      && [ -n "$(tail -c "+$((lao_old_size + 1))" "$lao_new" | head -c 1)" ]; then
+    { tail -n 1 "$lao_old"; tail -c "+$((lao_old_size + 1))" "$lao_new"; }
+  else
+    tail -c "+$((lao_old_size + 1))" "$lao_new"
+  fi | LC_ALL=C awk '
+    /^## / { if (open && !draft) bad = 1; open = 1; draft = 0; next }
+    tolower($0) ~ /^[[:space:]>*_]*status[[:space:]*_]*:/ {
+      if ($0 ~ /^\*\*Status:\*\*[[:space:]]*draft/) draft = 1; else bad = 1
+    }
+    END { if (open && !draft) bad = 1; exit bad }'
 }
 
 ledger_needs_token() {
