@@ -1,0 +1,31 @@
+name: check
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tools
+        run: |
+          if [ "$RUNNER_OS" = macOS ]; then
+            brew install shellcheck gitleaks
+          else
+            sudo apt-get update -q && sudo apt-get install -y -q shellcheck
+          fi
+      - name: Doctor
+        run: bash os/scripts/doctor.sh
+      - name: ShellCheck
+        run: shellcheck -S warning -x os/scripts/*.sh os/scripts/lib/*.sh os/scripts/hooks/*
+      - name: Tests
+        run: bash os/scripts/test.sh

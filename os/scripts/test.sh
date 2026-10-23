@@ -11,7 +11,8 @@
 # its own. The real satellites in os/satellites.txt are swapped for the fake
 # one before anything runs, and git's global config is replaced by a scratch
 # one, so nothing here can reach a real remote. Prints PASS or FAIL per check,
-# then a count. Run it before any kernel change, on macOS and on Linux.
+# then a count. Run it before any kernel change; CI runs it on macOS and Linux
+# (.github/workflows/check.yml).
 
 set -u
 LC_ALL=C

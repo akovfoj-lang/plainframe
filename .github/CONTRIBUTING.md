@@ -9,8 +9,8 @@ Plainframe is a template: improvements land here and flow into every clone throu
   refuse it. Run `os/scripts/doctor.sh --setup` once per clone to wire them.
 - **Prove it.** `os/scripts/doctor.sh`, `shellcheck -S warning -x os/scripts/*.sh
   os/scripts/lib/*.sh os/scripts/hooks/*` and `os/scripts/test.sh` must pass, on macOS and
-  on Linux. A fix to a guard or to sync comes with a test in `test.sh`
-  that fails without it.
+  on Linux; CI runs all three on macOS and Linux (`.github/workflows/check.yml`). A fix to
+  a guard or to sync comes with a test in `test.sh` that fails without it.
 - **Portable shell only.** Scripts run on macOS's bash 3.2 with BSD tools and on Linux with
   GNU tools: no `sed -i`, no `grep -P`, no `readlink -f`, no associative arrays.
 - **Record it.** Add a line to [CHANGELOG.md](../CHANGELOG.md) under the next version, and a

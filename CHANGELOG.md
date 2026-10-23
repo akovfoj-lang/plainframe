@@ -9,6 +9,15 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.6.1] — 2026-10-22
+
+### Added
+
+- **CI on macOS and Linux** (`.github/workflows/check.yml`): every push to main and every
+  pull request runs doctor, ShellCheck at warning level and the end-to-end tests on both
+  systems. 1.6.0 had passed on macOS only; the workflow was held back because the token
+  that pushed the release could not write workflows.
+
 ## [1.6.0] — 2026-10-22
 
 A full review of a real clone, three months and 400 commits in, found the machinery sound
