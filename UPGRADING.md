@@ -57,6 +57,15 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.7.0 to 1.8.0
+
+- **Claude Code asks before it edits a protected path**, even in bypass mode, and refuses
+  a force-push, `--no-verify` and printing `.env`. If you keep your own
+  `.claude/settings.json` hooks, the merge adds `PreToolUse` and `PostToolUse` beside
+  them; keep both sides.
+- **After a fetch or an MCP call, the session sees one line of law 10 context.** Nothing
+  is blocked.
+
 ## Coming from 1.6.3 to 1.6.4
 
 - **More counts as protected.** A `CLAUDE.md`, `AGENTS.md`, `.gitignore` or

@@ -41,6 +41,6 @@ _Snapshot from the last regen, not live — branch/dirty/unpushed below are only
 as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)
 for the real-time state._
 
-- branch: HEAD
-- dirty files: 13 (generated views excluded)
-- unpushed commits: (no upstream)
+- branch: main
+- dirty files: 9 (generated views excluded)
+- unpushed commits: 0

@@ -25,4 +25,10 @@ README's "One repo, many agents"). Both generated sets come from `os/commands.md
 playbooks are the single source of truth. If your adapters and the manifest disagree,
 regenerate: `os/scripts/gen-commands.sh`.
 
+Claude Code also runs two hooks of its own (`.claude/settings.json`):
+`os/scripts/claude-hooks/tool-guard.sh` asks before an edit to a protected path and
+refuses the Never tier (force-push, skipping the git hooks, printing `.env`), and
+`outside-content.sh` marks what a fetch brings back as data, never instructions (law 10).
+They bind Claude Code only; the git hooks bind every agent.
+
 The kernel holds nothing tool-specific. Same repo, same laws, interchangeable operators.

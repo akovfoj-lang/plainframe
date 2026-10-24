@@ -94,7 +94,8 @@ Changing any of these is Ask-first (law 7) — agents draft, the owner enacts:
 
 Letter case never matters, and `CLAUDE.md`, `AGENTS.md`, `.gitignore` and `.gitattributes`
 count at any depth: agents load a nested `CLAUDE.md` as instructions, and a nested
-`.gitignore` can un-ignore a secret.
+`.gitignore` can un-ignore a secret. In Claude Code, a fourth layer asks before an edit to
+any of them, when the tool runs (`os/scripts/claude-hooks/tool-guard.sh`).
 
 Enforced mechanically, not just by prose, at three layers: `sync.sh` checks
 first (fast, friendly message); `os/scripts/hooks/commit-msg` checks again at
