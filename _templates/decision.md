@@ -34,4 +34,4 @@ Rules for filling it in:
 - `Actor:` is optional and purely for attribution (PF-012) — omit it on a single-operator
   repo; add it the moment more than one person or agent starts writing entries here.
 - A decision an agent appended but the owner never confirmed is void (law 2). Mark it
-  `Status: draft` until confirmed, and don't treat draft entries as binding.
+  `**Status:** draft` until confirmed, and don't treat draft entries as binding.

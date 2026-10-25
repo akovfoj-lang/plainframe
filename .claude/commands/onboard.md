@@ -1,5 +1,5 @@
 ---
-description: Configure a fresh clone into the owner's own instance.
+description: "Configure a fresh clone into the owner's own instance."
 ---
 
 Follow the playbook at os/playbooks/onboard.md. It is the single source of truth for this procedure.

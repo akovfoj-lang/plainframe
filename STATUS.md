@@ -11,7 +11,7 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 ## Inbox
 
 - items: 1
-- oldest: 97 day(s)
+- oldest: 98 day(s)
 
 ## Incubator
 
@@ -42,5 +42,5 @@ as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)
 for the real-time state._
 
 - branch: main
-- dirty files: 9 (generated views excluded)
+- dirty files: 37 (generated views excluded)
 - unpushed commits: 0

@@ -1,6 +1,6 @@
 ---
 name: grill-me
-description: Interview the owner one question at a time, saving every answer to a brainstorm file.
+description: "Interview the owner one question at a time, saving every answer to a brainstorm file."
 ---
 
 Follow the playbook at os/playbooks/grill-me.md. It is the single source of truth for this procedure.

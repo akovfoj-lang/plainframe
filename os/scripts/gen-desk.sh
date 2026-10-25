@@ -56,7 +56,7 @@ trap 'rm -rf "$TMP" ".DESK.md.$$"' EXIT
 
 # First H1 of a file, with the leading "# " stripped. Empty if there is none.
 file_h1() {
-  awk '/^# / { sub(/^# /, ""); print; exit }' "$1" 2>/dev/null || true
+  awk '/^# / { sub(/^# /, ""); sub(/\r$/, ""); print; exit }' "$1" 2>/dev/null || true
 }
 
 # The value of a bold label, unwrapped onto one line. Source pages wrap at ~90
@@ -99,7 +99,9 @@ status_of() {
 # handoffs only (PF-032); outside git it falls back to the files.
 handoffs_in() {
   if [ "${2:-}" = tracked ] && git -C "$1" rev-parse --git-dir >/dev/null 2>&1; then
-    git -C "$1" ls-files -- "$3" 2>/dev/null \
+    # -z: git quotes and escapes a name it prints plain (non-ASCII, a quote,
+    # a backslash), and the quoted form would never match the folder.
+    git -C "$1" ls-files -z -- "$3" 2>/dev/null | tr '\0' '\n' \
       | awk -v d="$3/" 'index($0, d) == 1 { r = substr($0, length(d) + 1)
           if (r !~ /\// && r ~ /\.md$/ && r != "README.md") print $0 }' | sort
   else
@@ -125,16 +127,17 @@ generate() {
       case "$f" in workspace/README.md) continue ;; esac
       [ "$(status_of "$f")" = "open" ] || continue
       bl=$(field "$f" "Blocked on")
-      case "$bl" in
-        *owner*|*Owner*) printf -- '- **%s** — [%s](%s)\n' "$(file_h1 "$f")" "$f" "$f" >> "$TMP/wait" ;;
+      # The note template's convention: "owner" as the first word. A free-text
+      # mention ("the property owner", "the owner already approved") is not.
+      case $(printf '%s' "$bl" | tr '[:upper:]' '[:lower:]') in
+        owner|owner[!a-z]*) printf -- '- **%s** — [%s](%s)\n' "$(file_h1 "$f")" "$f" "$f" >> "$TMP/wait" ;;
       esac
     done
   fi
   if [ -f os/decisions.md ]; then
-    awk '/^## / { h = $0; sub(/^## /, "", h) }
-         /^\*\*Status:\*\*[[:space:]]*draft/ {
-           printf "- **Draft decision, void until you confirm** — %s — [os/decisions.md](os/decisions.md)\n", h }' \
-      os/decisions.md >> "$TMP/wait"
+    draft_decisions os/decisions.md | while IFS= read -r h; do
+      printf -- '- **Draft decision, void until you confirm** — %s — [os/decisions.md](os/decisions.md)\n' "$h"
+    done >> "$TMP/wait"
   fi
   now=$(date +%s)
   satellites > "$TMP/sats"
@@ -235,8 +238,8 @@ generate() {
 
   # -- Flags -----------------------------------------------------------------
   printf '\n## Flags\n\n'
-  if [ -f os/roadmap.md ] && grep -qE '^FLAG:' os/roadmap.md; then
-    grep -E '^FLAG:' os/roadmap.md | sed 's/^/- /'
+  if [ -f os/roadmap.md ] && [ -n "$(open_flags os/roadmap.md)" ]; then
+    open_flags os/roadmap.md | sed 's/^/- /'
   else
     printf -- '- none\n'
   fi

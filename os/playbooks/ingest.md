@@ -38,8 +38,14 @@ Deep-read ONE source and route everything in it.
    `<!-- confidence: low|medium|high -->` — may follow if you have a read on how solid the
    fact is (PF-013; see `_templates/area.md` for the full optional-fields convention,
    which also covers facts recorded some other way, without a `trust:` line at all).
+   Close the block right after the routed content with `<!-- /trust -->` on its own line.
+   The block runs until that line (or the next block's `<!-- source:` line, or the end
+   of the page): a heading or a `source:` line inside the copied text no longer ends it,
+   so the text itself can never switch the tag off.
    - Facts → the area page that owns each one (law 3: one home, pointers elsewhere).
-   - Decisions → append to `os/decisions.md` using the exact block from `_templates/decision.md`, with `**Status:** draft`. Only that exact form is surfaced as an open flag in STATUS — and a decision is only real once the owner confirms it in-session (law 2). (No provenance block here: a decision is the agent's synthesized proposal, not the source's raw content, and the ledger's own `**Status:**` field already tracks whether it is confirmed.)
+   - Decisions → append to `os/decisions.md` using the exact block from `_templates/decision.md`, with `**Status:** draft`. STATUS and DESK show any spelling of a draft Status line as
+   waiting, but the ledger gate (`ledger_gate=append-only`) accepts only that exact form —
+   and a decision is only real once the owner confirms it in-session (law 2). (No provenance block here: a decision is the agent's synthesized proposal, not the source's raw content, and the ledger's own `**Status:**` field already tracks whether it is confirmed.)
    - Ideas → seeds in `incubator/`.
    - Follow-ups → the owning area page, or `os/roadmap.md` if none owns them yet.
    - Assets → their homes; if a home is outside git, a tracked pointer page (law 4).

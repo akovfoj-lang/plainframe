@@ -105,11 +105,26 @@ case $TOOL in
     ;;
   Bash)
     cmd=$(printf '%s' "$IN" | json_str command) || exit 0
-    one=$(printf '%s' "$cmd" | tr '\n' ' ')
+    # Judged line by line, as the shell runs it: a backslash-newline joins two
+    # lines, and a heredoc's body is text, not a command — a commit message
+    # that mentions .env or --no-verify is not one that runs them.
+    one=$(printf '%s\n' "$cmd" | LC_ALL=C awk '
+      hd != "" { t = $0; if (strip) sub(/^\t+/, "", t); if (t == hd) hd = ""; next }
+      {
+        line = pend $0; pend = ""
+        if (line ~ /\\$/) { pend = substr(line, 1, length(line) - 1); next }
+        if (match(line, /<<-?[ \t]*["'"'"']?[A-Za-z_][A-Za-z0-9_]*["'"'"']?/) \
+            && substr(line, RSTART - 1, 1) != "<") {
+          w = substr(line, RSTART, RLENGTH); strip = (w ~ /^<<-/)
+          sub(/^<<-?[ \t]*/, "", w); gsub(/["'"'"']/, "", w); hd = w
+        }
+        print line
+      }
+      END { if (pend != "") print pend }')
     if printf '%s' "$one" | grep -Eq 'git[^;&|]*[[:space:]]push[^;&|]*[[:space:]](-[A-Za-z]*f[A-Za-z]*|--force[^[:space:]]*|\+[^[:space:]]+)([[:space:]]|$)'; then
       decide deny "Never tier: a force-push rewrites history someone may already hold. Push normally; if it is refused, pull and resolve (os/playbooks/resolve-conflict.md)."
     fi
-    if printf '%s' "$one" | grep -Eq '(--no-verify|core\.hooks[Pp]ath[[:space:]]*=|git[^;&|]*[[:space:]]commit[^;&|]*[[:space:]]-[A-Za-z]*n[A-Za-z]*([[:space:]]|$))'; then
+    if printf '%s' "$one" | grep -Eq 'git[^;&|]*[[:space:]](--no-verify|-c[[:space:]]*core\.hooks[Pp]ath=)|git[^;&|]*[[:space:]]commit[^;&|]*[[:space:]]-[A-Za-z]*n[A-Za-z]*([[:space:]]|$)'; then
       decide deny "Skipping the git hooks is the owner's break-glass call, never an agent's (CLAUDE.md, Protected paths). If a hook blocks, say what it said and ask the owner."
     fi
     clean=$(printf '%s' "$one" | sed -E 's/\.env\.(example|sample|template)//g')

@@ -9,6 +9,58 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.8.1] — 2026-10-24
+
+A third independent review, of the generators, the session scripts and what the playbooks
+say about them, run in a clone with no remote, reproduced 21 bugs and 7 playbook claims
+that did not hold. All are fixed, each with a test, plus a false alarm in 1.8.0's tool
+guard seen on its first morning. 133 tests, up from 110; on 1.8.0 the 23 new ones fail.
+
+### Fixed — misled you about what is done or waiting, or wrote where it must not
+
+- **A `satellites.txt` with no final newline dropped its last satellite** everywhere:
+  never synced, never watched, and drift-alert said "OK: all clean".
+- **Copied text could end its own `[untrusted origin]` tag** (law 10): a heading or a
+  `source:` line inside a routed block switched the tag off for the markers below it.
+  A block now ends only at ingest's closing `<!-- /trust -->`, the next block's
+  `<!-- source:` line, or the end of the page.
+- **MAP listed empty folders and folders holding only ignored files** (routine in an
+  Obsidian vault), so `--check` differed by machine, a raw commit of MAP.md was refused,
+  and STATUS reported stale views after every sync.
+- **drift-alert rewrote `.git/index`** in this repo and every satellite; it must only
+  notify (law 8). It now takes no lock and writes nothing.
+- **STATUS took any line opening with a date for a receipt**, prose and fenced examples
+  included (law 6). A receipt is `YYYY-MM-DD <topic>: <summary>` outside a code fence.
+
+### Fixed — a wrong or missing item, or a check that disagreed
+
+- **One control character (a terminal colour code, a form feed) hid every marker in a
+  note**; and a marker shown inside a code fence counted. Neither any more.
+- **A second audit of the day** (`audit-DATE-2.md`) now reads as the latest.
+- **gen-commands overwrote a hand-written command or skill** under a manifest name; it
+  now stops with an error. **Descriptions are quoted**, so `/audit` and `/sweep` are
+  valid YAML.
+- **Draft decisions in any spelling** (`Status: draft`, `**Status**: Draft`) show in
+  STATUS and DESK; `**Status:** drafted, confirmed` no longer counts as a draft, there or
+  in the ledger gate. One shared rule (`draft_decisions`, `lib/fs.sh`).
+- **DESK**: a satellite handoff with a non-ASCII name is in the chain; a satellite whose
+  only dirt is a deletion still ages out; "Waiting on you" lists a note only when its
+  `Blocked on:` starts with "owner", the note template's own convention; a CRLF note's
+  title carries no carriage return.
+- **STATUS counted ignored inbox files** (Obsidian's `.trash/`, `*.local.*`), and pages
+  in incubator, workspace and answers the same way; only what git would store counts.
+- **Open flags**: a bulleted or indented `FLAG:` counts, a fenced example does not
+  (`open_flags`, `lib/fs.sh`).
+- **session-start** names a rebase or merge in progress instead of "detached HEAD" or
+  "uncommitted edits overlap"; says when the upstream branch is gone instead of "up to
+  date"; never fast-forwards over a local ignored file; and says `PULL BLOCKED` on a real
+  conflict, as resolve-conflict.md expects.
+- **MAP** reads a README's description through CRLF, a BOM and code fences.
+- **STATUS after a yearly rotation** points at the archived receipts instead of "(none)".
+- **The tool guard (1.8.0) denied a command that only mentioned** a `.env` file or the
+  hook-skipping flag in a heredoc, such as a commit message. It now reads the command
+  line by line, skips heredoc bodies, and wants `git` before the flag.
+
 ## [1.8.0] — 2026-10-23
 
 Two of Plainframe's rules were checked only at commit, or only by prose. In Claude Code

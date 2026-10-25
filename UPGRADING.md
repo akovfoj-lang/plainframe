@@ -57,6 +57,17 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.8.0 to 1.8.1
+
+- **A routed block now ends at `<!-- /trust -->`.** /ingest writes it. Blocks routed
+  before 1.8.1 have none, so `markers.sh` now tags everything below them on that page as
+  `[untrusted origin]`, and /sweep reports those markers instead of acting on them. To
+  re-enable the marker track below an old block, add `<!-- /trust -->` under it.
+- **A workspace note waits on you only when its `**Blocked on:**` starts with "owner"**,
+  as the note template says. "the owner" or "a call from the owner" no longer counts.
+- **The command adapters are regenerated** with quoted descriptions; the merge brings
+  them, nothing to do.
+
 ## Coming from 1.7.0 to 1.8.0
 
 - **Claude Code asks before it edits a protected path**, even in bypass mode, and refuses

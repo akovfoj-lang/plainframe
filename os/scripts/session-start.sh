@@ -43,7 +43,10 @@ before_claude=$(hash_of CLAUDE.md)
 before_agents=$(hash_of AGENTS.md)
 
 branch=$(git symbolic-ref -q --short HEAD || true)
-if [ -z "$branch" ]; then
+op=$(unfinished_op "$ROOT")
+if [ -n "$op" ]; then
+  out "a $op is in progress — nothing pulled; finish or abort it first (os/playbooks/resolve-conflict.md)"
+elif [ -z "$branch" ]; then
   out "detached HEAD — nothing pulled; check out a branch before syncing"
 else
   up=$(upstream_of "$ROOT" "$branch")
@@ -56,11 +59,20 @@ else
     rtrack="refs/remotes/${up%% *}/${mref#refs/heads/}"
     u=$(git rev-parse -q --verify "$rtrack" || true)
     h=$(git rev-parse HEAD)
-    if [ -z "$u" ] || [ "$u" = "$h" ]; then
+    if [ -z "$u" ]; then
+      out "${up%% *} no longer has ${mref#refs/heads/} — nothing pulled; the commits here are on no remote until sync.sh pushes them"
+    elif [ "$u" = "$h" ]; then
       out "up to date with ${up%% *}"
     elif git merge-base --is-ancestor "$h" "$u"; then
       n=$(git rev-list --count "$h..$u")
-      if git merge -q --ff-only "$u" >/dev/null 2>&1; then
+      # A file that arrives tracked but sits here untracked and ignored would
+      # be overwritten without a word: git treats ignored files as expendable.
+      clash=$(git diff --name-only --diff-filter=A "$h" "$u" | while IFS= read -r p; do
+        if [ -e "$p" ] && git check-ignore -q --no-index -- "$p"; then printf '%s ' "$p"; fi
+      done)
+      if [ -n "$clash" ]; then
+        out "${up%% *} is $n commit(s) ahead and adds file(s) that exist here untracked and ignored: $clash— not pulled; move them aside, then run sync.sh"
+      elif git merge -q --ff-only "$u" >/dev/null 2>&1; then
         out "pulled $n commit(s) from ${up%% *} ($(git rev-parse --short "$h") → $(git rev-parse --short "$u"))"
       else
         out "${up%% *} is $n commit(s) ahead, but uncommitted edits here overlap them — not pulled; sync.sh brings them in once those are committed"
@@ -71,7 +83,7 @@ else
       if rebase_onto "$ROOT" "$u"; then
         out "both sides had moved: rebased this machine's unpushed commit(s) onto ${up%% *} — run sync.sh to push them"
       else
-        out "both sides had moved and these conflict: $(printf '%s ' $CONVERGE_CONFLICTS)— nothing changed; resolve per os/playbooks/resolve-conflict.md"
+        out "PULL BLOCKED: both sides had moved and these conflict: $(printf '%s ' $CONVERGE_CONFLICTS)— nothing changed; resolve per os/playbooks/resolve-conflict.md"
       fi
     else
       out "both sides have moved and this tree has uncommitted edits — not touched; sync.sh rebases once your work is committed"

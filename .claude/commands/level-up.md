@@ -1,5 +1,5 @@
 ---
-description: Weekly 3Ms interview — Mindset, Method, Machine — that ships one automation.
+description: "Weekly 3Ms interview — Mindset, Method, Machine — that ships one automation."
 ---
 
 Follow the playbook at os/playbooks/level-up.md. It is the single source of truth for this procedure.

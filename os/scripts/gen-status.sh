@@ -41,6 +41,25 @@ trap 'rm -rf "$TMP" ".STATUS.md.$$"' EXIT
 # shellcheck source=lib/fs.sh
 . "$ROOT/os/scripts/lib/fs.sh"
 
+# git_files0 DIR — NUL-delimited files under DIR that git would store
+# (tracked, or untracked and not ignored). Outside a repo — pre-commit checks
+# an export of the index — every file there is one.
+git_files0() {
+  if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ]; then
+    git ls-files -z --cached --others --exclude-standard -- "$1"
+  else
+    find "$1" -type f -print0
+  fi
+}
+
+# top_md0 DIR — DIR's own pages (*.md, not README.md, not in a subfolder),
+# NUL-delimited and sorted.
+top_md0() {
+  git_files0 "$1" | while IFS= read -r -d '' f; do
+    case $f in "$1"/*/*|"$1"/README.md) continue ;; "$1"/*.md) [ -e "$f" ] && printf '%s\0' "$f" ;; esac
+  done | sort -z
+}
+
 # The Git section describes the working tree an owner actually uses. sync.sh
 # builds its commits in a scratch worktree (detached, clean by construction)
 # and points this at the real one (PF-030).
@@ -74,7 +93,10 @@ generate() {
   printf '\n## Last 10 receipts\n\n'
   : > "$TMP/receipts"
   if [ -f os/worklog.md ]; then
-    grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}' os/worklog.md > "$TMP/receipts" || true
+    # A receipt is "YYYY-MM-DD <topic>: <summary>" at column 0, never inside a
+    # code fence: a date that merely opens a sentence is prose, not a receipt.
+    awk '/^[[:space:]]*(```|~~~)/ { f = !f; next } !f' os/worklog.md \
+      | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2} [^:]+: ' > "$TMP/receipts" || true
   fi
   rc=$(wc -l < "$TMP/receipts"); rc=$((rc))
   if [ "$rc" -gt 0 ]; then
@@ -85,7 +107,14 @@ generate() {
       if (length($0) > 160) { s = substr($0, 1, 160); sub(/[^ ]*$/, "", s); sub(/[[:space:],.;:-]+$/, "", s); $0 = s " …" }
       print "- " $0 }'
   else
-    printf -- '- (none)\n'
+    # Just after a yearly rotation, point at the epoch that holds them (law 9).
+    la=$(find archive -maxdepth 1 -type f -name 'worklog-*.md' 2>/dev/null | sort | tail -n 1)
+    if [ -n "$la" ]; then
+      na_r=$(grep -cE '^[0-9]{4}-[0-9]{2}-[0-9]{2} [^:]+: ' "$la" || true)
+      printf -- '- (none since the rotation — %s receipt(s) in %s)\n' "$na_r" "$la"
+    else
+      printf -- '- (none)\n'
+    fi
   fi
 
   # -- Inbox -----------------------------------------------------------------
@@ -94,7 +123,13 @@ generate() {
   if [ -d inbox ]; then
     # NUL-delimited: inbox filenames are external data — even a newline inside
     # one must not split a record or crash the count.
-    find inbox -type f ! -name 'README.md' ! -name '.*' -print0 > "$TMP/inbox0"
+    # Only what git would store: an ignored file (Obsidian's .trash/, a
+    # *.local.* scratch file) exists on one machine only, and a count that
+    # includes it makes --check differ by machine.
+    git_files0 inbox | while IFS= read -r -d '' f; do
+      case /$f in */.*|*/README.md) continue ;; esac
+      [ -e "$f" ] && printf '%s\0' "$f"
+    done > "$TMP/inbox0"
   fi
   ic=0
   oldest=""
@@ -119,8 +154,7 @@ generate() {
   # fails to open it and (under set -e) crashes gen-status outright (PF-020).
   : > "$TMP/inc0"
   if [ -d incubator ]; then
-    find incubator -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0 \
-      | sort -z > "$TMP/inc0"
+    top_md0 incubator > "$TMP/inc0"
   fi
   nc=0
   while IFS= read -r -d '' _f; do nc=$((nc + 1)); done < "$TMP/inc0"
@@ -142,8 +176,7 @@ generate() {
   # (PF-020): a filename with an embedded newline must stay one record.
   : > "$TMP/wsp0"
   if [ -d workspace ]; then
-    find workspace -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0 \
-      | sort -z > "$TMP/wsp0"
+    top_md0 workspace > "$TMP/wsp0"
   fi
   nw=0
   while IFS= read -r -d '' _f; do nw=$((nw + 1)); done < "$TMP/wsp0"
@@ -164,8 +197,7 @@ generate() {
   na=0
   if [ -d answers ]; then
     : > "$TMP/ans0"
-    find answers -maxdepth 1 -type f -name '*.md' ! -name 'README.md' -print0 \
-      | sort -z > "$TMP/ans0"
+    top_md0 answers > "$TMP/ans0"
     while IFS= read -r -d '' _f; do na=$((na + 1)); done < "$TMP/ans0"
   fi
   printf -- '- items: %s\n' "$na"
@@ -174,16 +206,14 @@ generate() {
   printf '\n## Open flags\n\n'
   : > "$TMP/flags"
   if [ -f os/roadmap.md ]; then
-    grep -E '^FLAG:' os/roadmap.md > "$TMP/flags" || true
+    open_flags os/roadmap.md > "$TMP/flags"
   fi
   # Draft decision entries are open flags too: an unconfirmed rule is void (law 2)
   # and must stay visible until the owner confirms or deletes it.
   : > "$TMP/drafts"
   if [ -f os/decisions.md ]; then
-    awk '/^## /            { h = $0; sub(/^## /, "", h) }
-         /^\*\*Status:\*\*[[:space:]]*draft/ {
-           printf "DRAFT decision (void until owner confirms, law 2): %s\n", h }' \
-      os/decisions.md > "$TMP/drafts"
+    draft_decisions os/decisions.md \
+      | sed 's/^/DRAFT decision (void until owner confirms, law 2): /' > "$TMP/drafts"
   fi
   cat "$TMP/drafts" >> "$TMP/flags"
   # A dated worklog line that misses the column-0 receipt shape — bulleted or
@@ -213,7 +243,10 @@ generate() {
   printf '\n## Audit\n\n'
   latest_audit=""
   if [ -d archive ]; then
-    latest_audit=$(find archive -maxdepth 1 -type f -name 'audit-*.md' 2>/dev/null | sort | tail -n 1)
+    # Sorted without ".md": a second report of the day, audit-DATE-2.md,
+    # must rank after audit-DATE.md ("-" sorts before ".").
+    latest_audit=$(find archive -maxdepth 1 -type f -name 'audit-*.md' 2>/dev/null | sed 's/\.md$//' | sort | tail -n 1)
+    [ -z "$latest_audit" ] || latest_audit="$latest_audit.md"
   fi
   if [ -n "$latest_audit" ]; then
     # One verdict per check, read from section headings only (PF-026):

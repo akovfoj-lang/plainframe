@@ -24,8 +24,10 @@
 # reports it. Two properties that gate matters:
 #
 #   Taint is BLOCK-scoped, not file-scoped (PF-023). A "trust: data" line
-#   taints the lines below it until the next Markdown heading or the next
-#   "source:" line — the two things that end a routed block. Tainting the
+#   taints the lines below it until ingest closes the block with a
+#   "<!-- /trust -->" line, or the next block's "<!-- source:" line begins. A
+#   heading or a plain "source:" line can be part of the copied text itself,
+#   so neither ends a block (1.8.1). Tainting the
 #   whole file instead meant one routed fact landing in an area page
 #   permanently disabled the marker track for that page, so the feature
 #   quietly stopped working on exactly the pages that receive routed facts.
@@ -106,7 +108,8 @@ MARKER_AWK='
 # every match in a file it judged binary rather than deciding line by line: a
 # plain-ASCII line sitting inside a .bin is still not prose.
 #
-# "Non-text" means a control character other than tab or CR — NOT "outside
+# "Non-text" means a control character other than tab, CR, form feed,
+# vertical tab, backspace or ESC — NOT "outside
 # [[:print:]]". This script runs under LC_ALL=C, where [[:print:]] is
 # single-byte ASCII only, so a printability test condemns every note
 # containing an em dash, a curly quote, an accent or an emoji — which is most
@@ -140,23 +143,27 @@ FNR == 1 {
   gsub(/\n/, " ", disp)
   wholen = (path ~ /^inbox\//) ? 1 : 0
   tainted = wholen
+  infence = 0
 }
 {
   if (!binary && $0 ~ /[[:cntrl:]]/) {
     probe = $0
-    gsub(/[\t\r]/, "", probe)
+    gsub(/[\t\r\f\v\b\033]/, "", probe)
     if (probe ~ /[[:cntrl:]]/) binary = 1
   }
   if (!wholen) {
-    # A new provenance block starts at its source: line, so taint resets
-    # there; a heading ends whatever block was open.
-    if ($0 ~ /^[[:space:]]*(<!--[[:space:]]*)?source:/) tainted = 0
-    else if ($0 ~ /^[[:space:]]*#+[[:space:]]/) tainted = 0
+    # A routed block ends where ingest closes it, or where the next
+    # provenance block starts (its comment-wrapped source: line).
+    if ($0 ~ /^[[:space:]]*<!--[[:space:]]*\/trust[[:space:]]*-->[[:space:]]*$/) { tainted = 0; next }
+    if ($0 ~ /^[[:space:]]*<!--[[:space:]]*source:/) tainted = 0
     if ($0 ~ /^[[:space:]]*(<!--[[:space:]]*)?trust:[[:space:]]*data([[:space:]]*-->)?[[:space:]]*$/) {
       tainted = 1
       next
     }
   }
+  # A marker shown inside a code fence is an example, not a marker.
+  if ($0 ~ /^[[:space:]]*(```|~~~)/) { infence = !infence; next }
+  if (infence) next
   if ($0 !~ reEDIT && $0 !~ reIDEA && $0 !~ reQ) next
   p = tainted ? "[untrusted origin] " : ""
   if ($0 ~ reEDIT)      buf[++nbuf] = sprintf("EDIT:\t%s%s:%d:%s", p, disp, FNR, $0)

@@ -1,6 +1,6 @@
 ---
 name: deepen
-description: Rewrite a task as the deeper version a top professional would do, then stop for "go".
+description: "Rewrite a task as the deeper version a top professional would do, then stop for \"go\"."
 ---
 
 Follow the playbook at os/playbooks/deepen.md. It is the single source of truth for this procedure.

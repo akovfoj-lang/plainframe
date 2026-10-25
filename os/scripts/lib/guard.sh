@@ -158,7 +158,7 @@ ledger_append_only() {
   fi | LC_ALL=C awk '
     /^## / { if (open && !draft) bad = 1; open = 1; draft = 0; next }
     tolower($0) ~ /^[[:space:]>*_]*status[[:space:]*_]*:/ {
-      if ($0 ~ /^\*\*Status:\*\*[[:space:]]*draft/) draft = 1; else bad = 1
+      if ($0 ~ /^\*\*Status:\*\*[[:space:]]*draft([^A-Za-z]|$)/) draft = 1; else bad = 1
     }
     END { if (open && !draft) bad = 1; exit bad }'
 }

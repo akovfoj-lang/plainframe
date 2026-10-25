@@ -13,6 +13,10 @@
 set -u
 LC_ALL=C
 export LC_ALL
+# Even `git status` rewrites .git/index when a file's timestamp moved; a robot
+# that must only notify (law 8) takes no lock and writes nothing.
+GIT_OPTIONAL_LOCKS=0
+export GIT_OPTIONAL_LOCKS
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT" || exit 0

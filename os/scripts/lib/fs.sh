@@ -64,6 +64,9 @@ oldest_dirty() {
     fi
   done < <(git -C "$od_repo" status --porcelain=v1 -uall -z 2>/dev/null)
   [ "$od_count" -gt 0 ] || return 0
+  # A deletion has no file left to date; the last commit bounds it from
+  # below, so a satellite whose only dirt is deletions still ages out.
+  [ -n "$od_oldest" ] || od_oldest=$(git -C "$od_repo" log -1 --format=%ct 2>/dev/null)
   printf '%s %s\n' "$od_count" "${od_oldest:-0}"
 }
 
@@ -71,9 +74,29 @@ satellite_list() {
   [ -f os/satellites.txt ] || return 0
   # sed, never xargs (apostrophes kill it).
   sed -e '/^[[:space:]]*#/d' -e 's/[[:space:]]#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
-    os/satellites.txt | sed '/^$/d' | while IFS= read -r sl_p; do
+    os/satellites.txt | sed '/^$/d' | while IFS= read -r sl_p || [ -n "$sl_p" ]; do
       # shellcheck disable=SC2088  # matching a literal "~/" prefix, not expanding it
       case $sl_p in "~/"*) sl_p="$HOME/${sl_p#\~/}" ;; esac
       printf '%s\n' "$sl_p"
     done
+}
+
+# draft_decisions FILE — prints the heading of each ledger entry whose Status
+# line says draft, in any spelling ("Status: draft", "**Status**: Draft", ...)
+# but never "drafted ...": a void entry must stay visible (law 2), and STATUS
+# and DESK must agree on which entries are void (law 3).
+draft_decisions() {
+  awk '/^## / { h = $0; sub(/^## /, "", h); sub(/\r$/, "", h) }
+       { l = tolower($0); sub(/\r$/, "", l) }
+       l ~ /^[[:space:]>*_]*status[[:space:]*_]*:[[:space:]*_]*draft([^a-z]|$)/ { print h }' "$1"
+}
+
+# open_flags FILE — prints each "FLAG:" line of FILE, bulleted or indented as
+# the owner types it, never one shown inside a code fence; each printed from
+# "FLAG:" on.
+open_flags() {
+  awk '/^[[:space:]]*(```|~~~)/ { f = !f; next }
+       f { next }
+       /^[[:space:]]*([-*+>][[:space:]]*|[0-9]+[.)][[:space:]]+)*FLAG:/ {
+         sub(/\r$/, ""); sub(/^[^F]*/, ""); print }' "$1"
 }

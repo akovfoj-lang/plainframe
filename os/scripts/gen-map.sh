@@ -38,8 +38,14 @@ TMP=$(mktemp -d "${TMPDIR:-/tmp}/gen-map.XXXXXX")
 trap 'rm -rf "$TMP" ".MAP.md.$$"' EXIT
 
 # First non-empty line after the first H1; prints nothing if there is none.
+# CRLF, a UTF-8 BOM and code fences are skipped, so they never stand in for
+# the H1 or the description.
 readme_desc() {
-  awk 'seen && NF { sub(/^[[:space:]]+/, ""); sub(/[[:space:]]+$/, ""); print; exit }
+  awk 'NR == 1 { sub(/^\357\273\277/, "") }
+       { sub(/\r$/, "") }
+       /^[[:space:]]*(```|~~~)/ { f = !f; next }
+       f { next }
+       seen && NF { sub(/^[[:space:]]+/, ""); sub(/[[:space:]]+$/, ""); print; exit }
        /^# / { seen = 1 }' "$1"
 }
 
@@ -55,6 +61,19 @@ file_h1() {
 # "not ignored", which just falls back to the pre-existing behavior.
 is_ignored() {
   git check-ignore -q -- "$1" 2>/dev/null
+}
+
+# True if git would store something under DIR (tracked, or untracked and not
+# ignored). An empty folder, or one holding only ignored files, exists on one
+# machine and in no checkout: listing it made --check differ by machine and
+# refused a raw commit of MAP.md (1.8.1). Outside a repo — the pre-commit
+# export of the index — any file counts.
+has_files() {
+  if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ]; then
+    [ -n "$(git ls-files --cached --others --exclude-standard -- "$1" | head -n 1)" ]
+  else
+    [ -n "$(find "$1" -type f | head -n 1)" ]
+  fi
 }
 
 # Print "- <dir>/ — <desc>" for one home directory.
@@ -97,6 +116,7 @@ generate() {
     [ -d "$d" ] || continue
     d=${d%/}
     is_ignored "$d" && continue
+    has_files "$d" || continue
     home_line "$d" ""
     # areas/ lists each area; archive/ (and everything else) stays one line.
     if [ "$d" = "areas" ]; then
@@ -104,6 +124,7 @@ generate() {
         [ -d "$s" ] || continue
         s=${s%/}
         is_ignored "$s" && continue
+        has_files "$s" || continue
         home_line "$s" "  "
       done
     fi

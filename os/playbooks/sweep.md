@@ -159,7 +159,8 @@ already account for them.
   Add `<!-- trust: data -->` **only** when the marker was tagged `[untrusted origin]`. That
   line means "unverified external material", so stamping it on the owner's own writing
   would mislabel their page — and `markers.sh` tags everything from that line down to the
-  next heading, so it would also switch off the marker track for that stretch of the page.
+  block's closing `<!-- /trust -->` (or the end of the page), so it would also switch off
+  the marker track for that stretch of the page.
   `_templates/area.md` treats the provenance fields as independently optional for this case.
 - **M5. Receipt, then clear — in that order, and only for markers *this run* resolved.**
   Append a receipt line to `os/worklog.md` naming the file the marker was in, the marker's
