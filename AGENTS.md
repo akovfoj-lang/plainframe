@@ -26,9 +26,9 @@ playbooks are the single source of truth. If your adapters and the manifest disa
 regenerate: `os/scripts/gen-commands.sh`.
 
 Claude Code also runs two hooks of its own (`.claude/settings.json`):
-`os/scripts/claude-hooks/tool-guard.sh` asks before an edit to a protected path and
-refuses the Never tier (force-push, skipping the git hooks, printing `.env`), and
+`os/scripts/claude-hooks/tool-guard.sh` asks before an edit to a protected path, and
 `outside-content.sh` marks what a fetch brings back as data, never instructions (law 10).
-They bind Claude Code only; the git hooks bind every agent.
+Deny rules in the same file refuse the Never tier (force-push, skipping the git hooks,
+reading `.env`). They bind Claude Code only; the git hooks bind every agent.
 
 The kernel holds nothing tool-specific. Same repo, same laws, interchangeable operators.

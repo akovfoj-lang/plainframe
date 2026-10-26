@@ -118,7 +118,9 @@ pre-push hold the protected paths — and health-checks the whole repo. It sets 
 config (`core.hooksPath`), which git never syncs or clones — rerun `doctor.sh --setup` on
 every machine or fresh clone you work from. In Claude Code, `.claude/settings.json` also
 runs `os/scripts/session-start.sh` at every startup, so each session begins pulled and
-checked.
+checked. The same file wires `os/scripts/claude-hooks/tool-guard.sh`, which asks before an
+edit to a protected path, even in bypass mode, and holds deny rules that refuse the Never
+tier: a force-push, skipping the git hooks, or reading `.env`.
 
 ---
 

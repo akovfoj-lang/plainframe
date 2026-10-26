@@ -57,6 +57,24 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.8.1 to 1.9.0
+
+- **Claude Code refuses the Never tier through deny rules now, not the hook.** The merge
+  adds a `permissions` block to `.claude/settings.json`. If your own settings already have
+  one, keep both sides, so each list holds your rules and the template's. A deny rule beats
+  an allow rule, so an allow rule that matched `cat .env` or a force-push stops working, as
+  it should.
+- **Failing closed needs Claude Code 2.1.295 or later** (`claude --version`). An older
+  version ignores `"onFailure": "block"`, and a hook that can't run lets the call through,
+  as in 1.8.x.
+- **More counts as protected**: `.claude/settings.local.json`, `.claude/skills/`,
+  `.claude/agents/`, `.claude/hooks/`, `.mcp.json`, and `CLAUDE.local.md` at any depth. An
+  edit to one asks, and a commit of a tracked one needs `OWNER-CONFIRMED`. A clone that
+  tracks none of them sees no change at commit (`*.local.*` is gitignored).
+- **Two harmless commands are refused**: `ls -la .env`, and a raw `git commit -m` whose
+  message holds ` -n `. Commit through `sync.sh`, or with the message in a file
+  (`git commit -F`).
+
 ## Coming from 1.8.0 to 1.8.1
 
 - **A routed block now ends at `<!-- /trust -->`.** /ingest writes it. Blocks routed

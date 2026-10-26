@@ -88,14 +88,18 @@ Changing any of these is Ask-first (law 7) — agents draft, the owner enacts:
 - `.gitignore` — what never reaches git (loosening it can expose secrets)
 - `.gitattributes` — how git merges both sides of a sync
 - `os/satellites.txt` — which repos sync reaches into
-- `.claude/settings.json` and `.github/workflows/` — what runs by itself
+- `.claude/settings.json` and `.github/workflows/` — what runs by itself, along with
+  `.claude/settings.local.json`, `.claude/skills/`, `.claude/agents/`, `.claude/hooks/`,
+  `.mcp.json` and `CLAUDE.local.md`
 - the autonomy table above
 - permissions and `.env` scope
 
-Letter case never matters, and `CLAUDE.md`, `AGENTS.md`, `.gitignore` and `.gitattributes`
-count at any depth: agents load a nested `CLAUDE.md` as instructions, and a nested
-`.gitignore` can un-ignore a secret. In Claude Code, a fourth layer asks before an edit to
-any of them, when the tool runs (`os/scripts/claude-hooks/tool-guard.sh`).
+Letter case never matters, and `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md`, `.gitignore`
+and `.gitattributes` count at any depth: agents load a nested `CLAUDE.md` as instructions,
+and a nested `.gitignore` can un-ignore a secret. In Claude Code, a fourth layer asks before
+an edit to any of them, when the tool runs (`os/scripts/claude-hooks/tool-guard.sh`), and
+deny rules in `.claude/settings.json` refuse the Never tier's force-push, hook-skipping and
+`.env` reads.
 
 Enforced mechanically, not just by prose, at three layers: `sync.sh` checks
 first (fast, friendly message); `os/scripts/hooks/commit-msg` checks again at

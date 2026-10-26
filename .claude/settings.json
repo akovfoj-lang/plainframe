@@ -14,12 +14,13 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Read|Bash",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/os/scripts/claude-hooks/tool-guard.sh\"",
-            "timeout": 10
+            "timeout": 10,
+            "onFailure": "block"
           }
         ]
       }
@@ -35,6 +36,77 @@
           }
         ]
       }
+    ]
+  },
+  "permissions": {
+    "ask": [
+      "Edit(CLAUDE.md)",
+      "Edit(claude.md)",
+      "Edit(AGENTS.md)",
+      "Edit(agents.md)",
+      "Edit(.gitignore)",
+      "Edit(.gitattributes)",
+      "Edit(CLAUDE.local.md)",
+      "Edit(/os/scripts/**)",
+      "Edit(/os/playbooks/**)",
+      "Edit(/os/commands.md)",
+      "Edit(/os/guard.conf)",
+      "Edit(/os/satellites.txt)",
+      "Edit(/.claude/**)",
+      "Edit(/.github/workflows/**)",
+      "Edit(/.git/**)",
+      "Edit(/.mcp.json)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(!.env.example)",
+      "Read(!.env.sample)",
+      "Read(!.env.template)",
+      "Bash(git push --force*)",
+      "Bash(git push * --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * -f*)",
+      "Bash(git push * +*)",
+      "Bash(git push --mirror*)",
+      "Bash(git push * --mirror*)",
+      "Bash(git * --no-verify*)",
+      "Bash(git commit -n*)",
+      "Bash(git commit * -n)",
+      "Bash(git commit * -n *)",
+      "Bash(git * core.hooksPath*)",
+      "Bash(git * core.hookspath*)",
+      "Bash(git push '--force*)",
+      "Bash(git push \"--force*)",
+      "Bash(git push * '--force*)",
+      "Bash(git push * \"--force*)",
+      "Bash(git push '-f*)",
+      "Bash(git push \"-f*)",
+      "Bash(git push * '-f*)",
+      "Bash(git push * \"-f*)",
+      "Bash(git push * '+*)",
+      "Bash(git push * \"+*)",
+      "Bash(git -c remote.*.push=*)",
+      "Bash(git config remote.*.push *)",
+      "Bash(git * --config-env*)",
+      "Bash(git * --no-veri)",
+      "Bash(git * --no-veri *)",
+      "Bash(git * --no-verif)",
+      "Bash(git * --no-verif *)",
+      "Bash(git * Core.HooksPath*)",
+      "Bash(git * core.HooksPath*)",
+      "Bash(git * Core.hooksPath*)",
+      "Bash(git * Core.hookspath*)",
+      "Bash(git * CORE.HOOKSPATH*)",
+      "Bash(env *GIT_CONFIG*)",
+      "Bash(export GIT_CONFIG*)",
+      "Bash(xxd *.env*)",
+      "Bash(hexdump *.env*)",
+      "Bash(less *.env*)",
+      "Bash(more *.env*)",
+      "Bash(bat *.env*)",
+      "Bash(tac *.env*)",
+      "Bash(rg *.env*)"
     ]
   }
 }

@@ -11,7 +11,7 @@
 #                     letter case and resolve symlinks first, as the hooks'
 #                     pathspecs do the first.
 #   PROTECTED_ANYWHERE  the names that count at any depth: agents load a
-#                     nested CLAUDE.md or AGENTS.md as instructions, and a
+#                     nested CLAUDE.md, CLAUDE.local.md or AGENTS.md as instructions, and a
 #                     nested .gitignore can un-ignore .env.
 #   PROTECTED_PATHS   the same list as git pathspecs, word-split on purpose
 #                     (none contains a space, and none starts with a name the
@@ -85,8 +85,8 @@
 #   ledger_needs_token OLD NEW   true when the gate is on and NEW is not a
 #                       pure append onto OLD.
 
-PROTECTED_NAMES='CLAUDE.md AGENTS.md os/scripts os/playbooks os/commands.md os/guard.conf .gitignore .gitattributes os/satellites.txt .claude/settings.json .github/workflows'
-PROTECTED_ANYWHERE='CLAUDE.md AGENTS.md .gitignore .gitattributes'
+PROTECTED_NAMES='CLAUDE.md AGENTS.md CLAUDE.local.md os/scripts os/playbooks os/commands.md os/guard.conf .gitignore .gitattributes os/satellites.txt .claude/settings.json .claude/settings.local.json .claude/skills .claude/agents .claude/hooks .mcp.json .github/workflows'
+PROTECTED_ANYWHERE='CLAUDE.md AGENTS.md CLAUDE.local.md .gitignore .gitattributes'
 PROTECTED_PATHS=
 for gp_name in $PROTECTED_NAMES; do PROTECTED_PATHS="$PROTECTED_PATHS :(icase)$gp_name"; done
 for gp_name in $PROTECTED_ANYWHERE; do PROTECTED_PATHS="$PROTECTED_PATHS :(glob,icase)**/$gp_name"; done

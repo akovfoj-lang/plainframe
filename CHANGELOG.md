@@ -9,6 +9,65 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.9.0] — 2026-10-25
+
+A fourth independent review, of the two Claude Code hooks, found 23 bugs and reproduced 22 of
+them in a clean clone. Nine were in the tool guard's own reading of shell commands. A test in
+bypass mode (Claude Code 2.1.308, desktop app) then showed which of Claude Code's own
+permission rules hold there. "Deny" rules do: a second probe refused 26 of 30 risky commands.
+"Ask" rules do not prompt at all, despite the docs. So the tool guard keeps the one job only a
+hook can do in bypass mode, asking before a protected-path edit, and the Never tier moves to
+deny rules. 135 tests, up from 133: the five tests of the old Bash and Read checks are
+replaced by seven. On 1.8.1 six of them fail. The seventh, a missing library exits non-zero,
+already held there by accident, but nothing blocked the call.
+
+### Changed
+
+- **The tool guard judges edits only** (Edit, Write, MultiEdit, NotebookEdit) and asks
+  before one lands on a protected path or inside `.git/`. It no longer reads Bash commands
+  or Read calls, so the false alarms of its command parser are gone too: a commit message
+  that mentions `--force` now runs.
+- **The Never tier is 49 deny rules in `.claude/settings.json`**, which hold in bypass mode
+  and judge each part of a chained command:
+  - reading `.env` and `.env.*` (`.env.example`, `.env.sample` and `.env.template` pass);
+  - a force-push: `--force`, `-f` and `+ref`, quoted or not, `--mirror`, and a
+    `remote.*.push` override;
+  - skipping the git hooks: `--no-verify` and its abbreviations, `git commit -n`, and
+    `core.hooksPath` in its common letter cases, and config set through `--config-env`
+    or a `GIT_CONFIG*` variable;
+  - printing `.env` with `xxd`, `hexdump`, `less`, `more`, `bat`, `tac` or `rg`, which
+    the Read rules alone let through.
+- **16 ask rules on the protected paths** sit beside them. They do not prompt in bypass
+  mode, which is why the hook stays. They cost nothing, and they should cover the other
+  modes, though that is untested.
+- **The hook fails closed.** If git fails or a library is missing or broken, it exits
+  non-zero, and `"onFailure": "block"` blocks the call. In 1.8.x every such failure meant
+  `exit 0` and no output, so the guard switched itself off without a word.
+
+### Fixed — could let a protected edit through without asking
+
+- **Unicode spellings of a protected name.** On case-insensitive APFS, `AGENTſ.md` (long s)
+  is `AGENTS.md`, and `.claude/hooKs` with the Kelvin sign is `.claude/hooks`. Names are now
+  compared after NFKC and Unicode case folding (`perl`). Without perl the hook falls back to
+  ASCII case folding, as before.
+- **A file symlink is judged where it lands**, so a link into `.git/config` asks. A chain of
+  links is followed up to 32 deep, and a longer one asks instead of passing.
+- **Config that runs by itself was unprotected**: `.claude/settings.local.json`,
+  `.claude/skills/`, `.claude/agents/`, `.claude/hooks/`, `.mcp.json`, and `CLAUDE.local.md`
+  at any depth. They are now in `lib/guard.sh`'s list, so the git hooks and `sync.sh` hold
+  the tracked ones as well as the tool guard.
+- **A path with a TAB, a newline or another control character** made the hook's reply invalid
+  JSON. The reason text now drops them.
+
+### Known limits
+
+- No rule can see a `.env` read inside a substitution (`echo "$(<.env)"`) or inside
+  `bash -c '...'`.
+- A Bash command that writes a protected file (`sed -i`, `>`) is caught at commit, not when
+  it runs.
+- Two harmless commands are refused: `ls -la .env`, and a raw `git commit -m` whose message
+  holds ` -n `.
+
 ## [1.8.1] — 2026-10-24
 
 A third independent review, of the generators, the session scripts and what the playbooks
