@@ -2,11 +2,8 @@
 
 # STATUS
 
-Receipts, counts, and open flags — reported, never inferred from prose (law 6).
-
-## Last 10 receipts
-
-- 2026-07-18 genesis: Plainframe template created
+Counts and open flags — reported, never inferred from prose (law 6). The newest
+receipts are in the session-start report; all of them are in os/worklog.md.
 
 ## Inbox
 
@@ -34,13 +31,3 @@ Receipts, counts, and open flags — reported, never inferred from prose (law 6)
 ## Audit
 
 - latest: none yet — run /audit
-
-## Git
-
-_Snapshot from the last regen, not live — branch/dirty/unpushed below are only
-as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)
-for the real-time state._
-
-- branch: feat/due-1.10.0
-- dirty files: 7 (generated views excluded)
-- unpushed commits: (no upstream)

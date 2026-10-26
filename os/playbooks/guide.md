@@ -11,6 +11,6 @@ Give a human or an agent the friendly tour, from zero.
 5. Sketch the first week: day one, add an area and drop notes into `inbox/` as they come; run /sweep once a few items pile up; let each session sync itself (type /sync only to say "sync everything now"); put /audit on the monthly line of `os/routine.md`, or schedule it report-only (`os/playbooks/audit.md`).
 6. Show how to add an area: create `areas/<name>/README.md` from `_templates/area.md` — goal, current state, pointers — then regenerate MAP.md so it routes there.
 7. Explain why the pieces hold each other up: receipts stop prose from claiming "done"; generated MAP and STATUS cannot lie about the tree; decisions outrank pages, so there is one truth; notify-only automation means a robot never commits a half-thought.
-8. End where every session begins: read session-start.sh's report, glance at DESK.md and STATUS.md, pick a task, leave a receipt.
+8. End where every session begins: read session-start.sh's report (it lists the newest receipts), glance at DESK.md, pick a task, leave a receipt.
 
 No receipt: /guide changes nothing — unlike /onboard (`os/playbooks/onboard.md`), which configures this clone into your instance and does leave one. Receipts record state-changing work (law 9) — logging pure reads would bury the signal under noise.

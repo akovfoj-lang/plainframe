@@ -26,7 +26,11 @@
 # os/worklog.md inside that same commit, "YYYY-MM-DD " prefixed when the line
 # has no date — so os/worklog.md never has to be passed as a path just to carry
 # a receipt (another session may have lines of its own in it). `--receipt
-# "<line>" --` with no paths after it syncs the receipt alone.
+# "<line>" --` with no paths after it syncs the receipt alone. Without one,
+# sync writes its own "YYYY-MM-DD sync: <message>" line into that same commit,
+# naming the satellites it synced. Either way a sync is one commit: the
+# receipt travels with the work, so a push that is refused or offline holds
+# both back together, and GitHub never has one without the other (PF-015).
 #
 # Per repo (each satellite in os/satellites.txt, then this repo):
 #   1. commit what is in scope;
@@ -39,10 +43,8 @@
 #      your commit stays here unpushed; resolve per
 #      os/playbooks/resolve-conflict.md, then rerun;
 #   3. push.
-# Then, once the outcome is known, it appends its own receipt
-# ("YYYY-MM-DD sync: ...") to os/worklog.md and pushes that too — the two
-# passes PF-015 requires, without anyone running them by hand (PF-034).
-# Nothing to commit, pull or push means no receipt either.
+# A sync that only pulls, or only pushes commits already made here, writes no
+# receipt: each of those commits carries its own.
 #
 # Protected-path gate (law 7; main repo; only what is in scope, judged on the
 # commit's own tree, renames counted as the deletes they also are): a change
@@ -362,10 +364,6 @@ EOF
 done < "$TMP/sats"
 
 # -- This repo last ------------------------------------------------------------
-# The views describe this tree's real git state (branch, unpushed, dirty) —
-# not the scratch worktree's, which is detached and clean by construction.
-PLAINFRAME_LIVE_ROOT=$ROOT
-export PLAINFRAME_LIVE_ROOT
 
 append_line() {
   if [ -s "$1" ] && [ -n "$(tail -c 1 "$1")" ]; then printf '\n' >> "$1"; fi
@@ -374,8 +372,7 @@ append_line() {
 
 # commit_scratch MESSAGE — regenerate, stage everything in the scratch tree,
 # commit if anything changed. Sets COMMITTED. Returns 2 if a generator failed,
-# 1 if a hook refused the commit — the caller decides, because a refused
-# receipt commit comes after the work is already pushed.
+# 1 if a hook refused the commit.
 commit_scratch() {
   COMMITTED=0
   if ! regen_views "$WT"; then
@@ -487,9 +484,10 @@ finish_blocked() {
   exit 1
 }
 
-# Pass 1: the work. Views alone are not work: their live lines (branch, dirty
-# count, satellites) differ on every regen, so with nothing else in scope and
-# no receipt to carry there is nothing to commit — not a STATUS-only commit.
+# The one pass: the work and its receipt, in one commit. Views alone are not
+# work: their live lines (a satellite's uncommitted work) can differ on every
+# regen, so with nothing else in scope and no receipt to carry there is
+# nothing to commit — not a views-only commit.
 C1=0
 # A receipt already waiting in an unpushed commit — a rerun after an offline
 # PARTIAL — is not written twice.
@@ -504,9 +502,23 @@ if [ -n "$MUP" ]; then
       | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} //' > "$TMP/wl-unpushed"
   fi
 fi
-if [ ${#RECEIPTS[@]} -gt 0 ] || ! git diff --quiet "$O" "$T" -- . \
-     ':(exclude)MAP.md' ':(exclude)STATUS.md' ':(exclude)DESK.md' \
-     ':(exclude).claude/commands' ':(exclude).agents/skills'; then
+WORK=0
+git diff --quiet "$O" "$T" -- . \
+  ':(exclude)MAP.md' ':(exclude)STATUS.md' ':(exclude)DESK.md' \
+  ':(exclude).claude/commands' ':(exclude).agents/skills' || WORK=1
+# No --receipt given: sync's own line, for this repo's work or a satellite's.
+# Never on a branch with no upstream — nothing will be synced, so no line may
+# say it was.
+AUTO=""
+if [ ${#RECEIPTS[@]} -eq 0 ] && [ -n "$MUP" ] && { [ "$WORK" -eq 1 ] || [ -n "$SYNCED" ]; }; then
+  SUMMARY=$(printf '%s\n' "$MSG" | head -n 1 | awk '{
+    if (length($0) <= 80) { print; exit }
+    s = substr($0, 1, 80); sub(/[^ ]*$/, "", s); sub(/[[:space:],.;:-]+$/, "", s); print s " …" }')
+  AUTO="$TODAY sync: $SUMMARY"
+  [ -z "$SYNCED" ] || AUTO="$AUTO — $SYNCED"
+  [ -z "$PARTIAL" ] || AUTO="$AUTO; partial: $PARTIAL"
+fi
+if [ ${#RECEIPTS[@]} -gt 0 ] || [ "$WORK" -eq 1 ] || [ -n "$AUTO" ]; then
   for r in ${RECEIPTS[@]+"${RECEIPTS[@]}"}; do
     if grep -qxF -- "${r#????-??-?? }" "$TMP/wl-unpushed"; then
       echo "note: that receipt already waits in an unpushed commit — written once: $r"
@@ -514,6 +526,7 @@ if [ ${#RECEIPTS[@]} -gt 0 ] || ! git diff --quiet "$O" "$T" -- . \
     fi
     append_line "$WT/os/worklog.md" "$r"
   done
+  [ -z "$AUTO" ] || append_line "$WT/os/worklog.md" "$AUTO"
   commit_scratch "$MSG" || exit $?
   C1=$COMMITTED
 fi
@@ -523,33 +536,10 @@ fi
 [ "$C1" -eq 0 ] || echo "committed: main ($(git -C "$WT" rev-parse --short HEAD))"
 converge_and_push "$WT" "$BRANCH" main scratch || finish_blocked
 P1=$CP_PUSHED
-OFF=$CP_OFFLINE
+[ "$CP_OFFLINE" -eq 0 ] || add_partial "main not pushed (offline) — the next sync pushes it"
 # No upstream: committed here, nothing pushed — partial, never a receipt
 # claiming a sync. (Nothing committed and no upstream is just nothing to do.)
-NOUP=0
-[ "$CP_NOUP" -eq 0 ] || [ "$C1" -eq 0 ] || NOUP=1
-
-# Pass 2: the receipt, written only now that the outcome is known.
-if [ "$OFF" -eq 0 ] && [ "$NOUP" -eq 0 ] && { [ "$C1" -eq 1 ] || [ "$P1" -eq 1 ] || [ -n "$SYNCED" ]; }; then
-  SUMMARY=$(printf '%s\n' "$MSG" | head -n 1 | awk '{
-    if (length($0) <= 80) { print; exit }
-    s = substr($0, 1, 80); sub(/[^ ]*$/, "", s); sub(/[[:space:],.;:-]+$/, "", s); print s " …" }')
-  line="$TODAY sync: $SUMMARY — main@$(git -C "$WT" rev-parse --short HEAD)"
-  [ -z "$SYNCED" ] || line="$line, $SYNCED"
-  [ -z "$PARTIAL" ] || line="$line; partial: $PARTIAL"
-  append_line "$WT/os/worklog.md" "$line"
-  if commit_scratch "worklog: sync receipt for $(git -C "$WT" rev-parse --short HEAD)"; then
-    converge_and_push "$WT" "$BRANCH" main scratch || finish_blocked
-    [ "$CP_OFFLINE" -eq 0 ] || OFF=1
-  else
-    # The work is already pushed; only its receipt is missing. Say so, and
-    # still move this tree onto what was pushed.
-    git -C "$WT" reset -q --hard HEAD
-    add_partial "the work is pushed, but its sync receipt was refused (above) — add it by hand"
-  fi
-fi
-[ "$OFF" -eq 0 ] || add_partial "main not pushed (offline) — the next sync pushes it"
-[ "$NOUP" -eq 0 ] || add_partial "main not pushed (no upstream) — set one with 'git push -u <remote> $BRANCH'"
+[ "$CP_NOUP" -eq 0 ] || [ "$C1" -eq 0 ] || add_partial "main not pushed (no upstream) — set one with 'git push -u <remote> $BRANCH'"
 
 advance_main "$(git -C "$WT" rev-parse HEAD)"
 

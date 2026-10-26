@@ -57,6 +57,22 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.10.0 to 1.11.0
+
+- **Each sync is one commit.** The work and its receipt go in together; with no
+  `--receipt`, sync writes its own `sync:` line into that commit. No more "worklog: sync
+  receipt for …" commits, and the new `sync:` lines carry no hash. The old ones stay in your
+  history and worklog as they are.
+- **STATUS.md shrinks.** Regenerating it (step 4) drops "Last 10 receipts" and "Git". If
+  anything of yours read those sections, read the session-start report or `os/worklog.md`
+  for receipts, and `git status` for the git state.
+- **The session-start report lists your 5 newest receipts** where it used to say "views
+  current". It no longer names a stale view: sync regenerates them, pre-commit refuses a
+  stale one, and `os/scripts/gen-status.sh --check` (and the other generators) still work by
+  hand.
+- **The law-10 hook goes quiet.** After a fetch, an MCP call or an inbox read, Claude Code
+  gets a note only when the result holds an approval token or injection phrasing.
+
 ## Coming from 1.9.0 to 1.10.0
 
 - **A line that already starts with `DUE:` shows on DESK after the merge.** Regenerate

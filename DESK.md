@@ -2,8 +2,8 @@
 
 # DESK
 
-What to do next, and where you left off. MAP says where things live; STATUS says
-what happened; this says what is in front of you.
+What to do next, and where you left off. MAP says where things live; STATUS counts
+what is open; this says what is in front of you.
 
 ## Waiting on you
 

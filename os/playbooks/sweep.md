@@ -175,8 +175,8 @@ already account for them.
 ## Finish
 
 11. Append the run receipt (`YYYY-MM-DD sweep: <summary>`), then regenerate `MAP.md` and
-    `STATUS.md` — regeneration comes last so STATUS already includes every receipt this
-    sweep wrote. The summary names both tracks: items drained, markers resolved, and how
+    `STATUS.md` — regeneration comes last so STATUS already counts everything this
+    sweep moved. The summary names both tracks: items drained, markers resolved, and how
     many are on the owner queue.
 
 ## Report back

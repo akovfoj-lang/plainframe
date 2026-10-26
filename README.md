@@ -39,11 +39,11 @@ flowchart TD
 ```
 
 You capture into `inbox/`. `/sweep` routes each item to its one home. Work happens in the
-areas. Every action writes a receipt. Generators rebuild the map, the status board and the
-desk from those receipts — never from prose. The session syncs its own work, both ways,
-the moment a unit of it is done — nobody has to remember to — and the next session pulls,
-reads the path and continues. `drift-alert` watches without touching. `os/decisions.md`
-sits above all of it.
+areas. Every action writes a receipt, in the same commit as the work. Generators rebuild the
+map, the status board and the desk from the tree — never from prose. The session syncs its
+own work, both ways, the moment a unit of it is done — nobody has to remember to — and the
+next session pulls, sees the newest receipts, reads the path and continues. `drift-alert`
+watches without touching. `os/decisions.md` sits above all of it.
 
 ### Markers: capture without leaving the page
 
@@ -118,10 +118,11 @@ hooks — pre-commit blocks stale generated files and, with
 pre-push hold the protected paths — and health-checks the whole repo. It sets local git
 config (`core.hooksPath`), which git never syncs or clones — rerun `doctor.sh --setup` on
 every machine or fresh clone you work from. In Claude Code, `.claude/settings.json` also
-runs `os/scripts/session-start.sh` at every startup, so each session begins pulled and
-checked. The same file wires `os/scripts/claude-hooks/tool-guard.sh`, which asks before an
-edit to a protected path, even in bypass mode, and holds deny rules that refuse the Never
-tier: a force-push, skipping the git hooks, or reading `.env`.
+runs `os/scripts/session-start.sh` at every startup, so each session begins pulled, with
+the newest receipts and any stuck work in front of it. The same file wires
+`os/scripts/claude-hooks/tool-guard.sh`, which asks before an edit to a protected path,
+even in bypass mode, and holds deny rules that refuse the Never tier: a force-push,
+skipping the git hooks, or reading `.env`.
 
 ---
 

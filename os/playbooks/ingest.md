@@ -51,4 +51,4 @@ Deep-read ONE source and route everything in it.
    - Assets → their homes; if a home is outside git, a tracked pointer page (law 4).
 5. Sensitive originals stay out of git: move them to their external home and leave a pointer page behind.
 6. Ask a one-line question for anything you cannot route confidently. Never guess.
-7. Append the receipt (`YYYY-MM-DD ingest: <summary>` to os/worklog.md), then regenerate MAP.md and STATUS.md if any homes changed — regeneration last, so STATUS already includes this receipt.
+7. Append the receipt (`YYYY-MM-DD ingest: <summary>` to os/worklog.md), then regenerate MAP.md and STATUS.md if any homes changed — regeneration last, so STATUS already counts what this ingest moved.

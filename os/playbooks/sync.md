@@ -18,8 +18,9 @@ owner never has to type /sync; when they do, it means "sync everything now" (law
    ```
    os/scripts/sync.sh "<what you did>" --receipt "<topic>: <one line>" -- <path>...
    ```
-   It regenerates the views itself, commits, brings both sides together, pushes, and
-   writes its own `sync:` receipt afterwards — nothing else to run.
+   It regenerates the views itself, commits the work and its receipt together, brings
+   both sides together and pushes — one commit, nothing else to run. Leave `--receipt`
+   off and it writes its own `sync:` line into that commit instead.
 4. Read the last line:
    - `OK: synced` or `OK: nothing to sync` — done.
    - `PARTIAL:` (exit 3) — it pushed what it could and says what it left and why. A
@@ -55,5 +56,6 @@ allows, never a pushed commit, never a merge, never a force-push. A view that co
     # (macOS: prefer a launchd agent running the same command.)
     ```
 
-Receipt: sync.sh writes its own `YYYY-MM-DD sync: …` line, only after the push succeeded
-(PF-015, PF-034); your work's receipt rides the same sync through `--receipt`.
+Receipt: your work's receipt rides in the sync's one commit through `--receipt`; given
+none, sync.sh writes a `YYYY-MM-DD sync: …` line there instead. Either way the receipt
+and the work reach GitHub together or not at all (PF-015).

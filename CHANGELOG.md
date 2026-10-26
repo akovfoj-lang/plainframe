@@ -9,6 +9,46 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.11.0] — 2026-10-26
+
+A review of a private clone counted what the kernel's own upkeep cost. 175 of its 502
+commits were sync's second pass, "worklog: sync receipt for …", and 183 of the 184
+automatic lines it wrote repeated a receipt already written by hand. STATUS.md changed in
+481 of 481 commits, for a receipt list and a git snapshot that live elsewhere. Four view
+checks took 2.86 s of every session start, though sync, pre-commit and CI already make
+them. And the law-10 hook added the same note after every fetch: about 520 tokens a
+session, 268 notes in one. This release cuts all four. 142 tests, up from 139: three new,
+six rewritten for the new behaviour. On 1.10.0 all nine of them fail.
+
+### Changed
+
+- **One commit per sync.** `os/scripts/sync.sh` puts the `--receipt` line in the work's own
+  commit. Given no `--receipt`, it writes its own `YYYY-MM-DD sync: <message>` line into
+  that same commit, naming the satellites it synced, but never on a branch with no
+  upstream, where nothing is synced. The second "worklog: sync receipt for …" commit is
+  gone, so a push that is refused or offline holds back the work and its receipt together,
+  and GitHub never has one without the other (PF-015). The `sync:` line no longer carries a
+  commit hash. A sync that only pulls, or only pushes commits already made, writes no line:
+  each of those commits carries its own.
+- **STATUS.md keeps counts, open flags and the latest audit.** `os/scripts/gen-status.sh`
+  drops "Last 10 receipts" and "Git", so a receipt leaves STATUS as it was. The receipts are
+  in the session-start report and `os/worklog.md`; the live git state is in that report and
+  in `git status`. A dated worklog line that misses the receipt shape is still flagged. The
+  `PLAINFRAME_LIVE_ROOT` export that fed the Git section is gone from sync.sh.
+- **Session start lists the 5 newest receipts** instead of running `gen-map`,
+  `gen-status`, `gen-desk` and `gen-commands --check`: 0.03 s instead of 2.86 s. sync.sh
+  regenerates the views in every commit, pre-commit refuses a stale one, and CI checks them
+  again. The list keeps STATUS's old rules: a receipt sits at column 0, outside a code
+  fence; each is cut to 160 characters on a word boundary; just after a yearly rotation it
+  points at the archive that holds the last ones.
+- **The law-10 hook is silent on a clean result.**
+  `os/scripts/claude-hooks/outside-content.sh` speaks only when a result holds
+  `OWNER-CONFIRMED`, `SATELLITE-CONFIRMED` or injection phrasing, and then still opens with
+  the law-10 line. Law 10 itself is in CLAUDE.md already. `Read` stays in its matcher, so an
+  inbox read is still scanned.
+- **The docs follow**: CLAUDE.md's START steps 1–2 and law 6, AGENTS.md, the sync, sweep,
+  ingest and guide playbooks, DESK's intro line, and two README sentences.
+
 ## [1.10.0] — 2026-10-26
 
 DESK can see a deadline now. A review of a private clone found its DESK saying "nothing

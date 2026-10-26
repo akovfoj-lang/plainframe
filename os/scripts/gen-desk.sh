@@ -4,9 +4,9 @@
 # Usage: os/scripts/gen-desk.sh          regenerate DESK.md in place
 #        os/scripts/gen-desk.sh --check  exit 1 (writing nothing) if DESK.md is stale
 #
-# MAP.md answers "where does a fact live". STATUS.md answers "what happened".
-# DESK.md answers "what do I do next, and where was I" — the question neither
-# of the other two is shaped to answer.
+# MAP.md answers "where does a fact live". STATUS.md answers "how much is
+# open". DESK.md answers "what do I do next, and where was I" — the question
+# neither of the other two is shaped to answer.
 #
 # It reports, never infers (law 6). Everything here is lifted verbatim from a
 # source file that already owns it (law 3): build pages own their own Next line,
@@ -25,8 +25,8 @@
 #
 # Waiting on you opens with the owner's deadlines: every "DUE: YYYY-MM-DD what"
 # line, soonest first, from `markers.sh --due`. The line shows the date itself,
-# never "in 9 days": DESK is checked for staleness at every commit and session
-# start, so a line that changed with the calendar would be stale by morning.
+# never "in 9 days": DESK is checked for staleness at every commit, so a line
+# that changed with the calendar would be stale by morning.
 # A deadline stays listed until its DUE line is deleted.
 #
 # Waiting on you also names a satellite whose uncommitted work is more than a
@@ -121,8 +121,8 @@ satellites() { satellite_list; }
 generate() {
   printf '<!-- GENERATED — do not hand-edit. Regenerate: os/scripts/gen-desk.sh -->\n\n'
   printf '# DESK\n\n'
-  printf 'What to do next, and where you left off. MAP says where things live; STATUS says\n'
-  printf 'what happened; this says what is in front of you.\n'
+  printf 'What to do next, and where you left off. MAP says where things live; STATUS counts\n'
+  printf 'what is open; this says what is in front of you.\n'
 
   # -- Waiting on you --------------------------------------------------------
   printf '\n## Waiting on you\n\n'

@@ -13,9 +13,10 @@ you.
 **START**
 1. `os/scripts/session-start.sh` — Claude Code runs it for you at startup
    (`.claude/settings.json`) and puts its report in front of you; any other agent runs it
-   first (`AGENTS.md`). It pulls, says if this file changed (then re-read it), checks the
-   generated views, and names uncommitted or stuck work here and in the satellites.
-2. Glance at `DESK.md` (what is waiting) and `STATUS.md` (what happened).
+   first (`AGENTS.md`). It pulls, says if this file changed (then re-read it), lists the
+   newest receipts (what happened), and names uncommitted or stuck work here and in the
+   satellites.
+2. Glance at `DESK.md` (what is waiting).
 3. Read `MAP.md`, then only the pages it routes you to. Take the task.
 
 **END** — and after every finished unit of work, not only at the end
@@ -42,7 +43,7 @@ you.
    behalf) ships without passing the checks the owner has defined for it — and law 7's
    autonomy table decides whether shipping is even yours to do.
 6. **Generated, not hand-written.** MAP.md, STATUS.md and DESK.md are only ever written by
-   `os/scripts/` generators. STATUS reports receipts and open flags; it never infers
+   `os/scripts/` generators. STATUS reports counts and open flags; it never infers
    "done" from prose.
 7. **Autonomy table.** Actions are tiered: Free / Ask-first / Never (see table). Integration
    pages may tighten a tier, never loosen it. The table protects itself: changing it — or

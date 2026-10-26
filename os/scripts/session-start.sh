@@ -6,8 +6,8 @@
 # Claude Code runs this by itself at startup (.claude/settings.json, the
 # SessionStart hook) and hands the agent its report before the first word;
 # any other agent runs it as its first command (AGENTS.md). It replaces the
-# hand-typed `git pull` + generator checks, which an agent could not do
-# before reading CLAUDE.md in a tool that loads CLAUDE.md for it (PF-039).
+# hand-typed `git pull`, which an agent could not do before reading CLAUDE.md
+# in a tool that loads CLAUDE.md for it (PF-039).
 #
 #   1. Brings GitHub's side down: fetch, then fast-forward; or, when both
 #      sides moved and this tree is clean, rebase this machine's own unpushed
@@ -15,10 +15,16 @@
 #      tree is never stashed, reset or rebased — it may be another session's
 #      work in flight. Never commits, never pushes.
 #   2. Says so when CLAUDE.md or AGENTS.md changed underneath you: re-read.
-#   3. Runs the generators' --check modes and names anything stale.
+#   3. Lists the newest receipts: what happened lately, in this session or
+#      another one.
 #   4. Names uncommitted or unpushed work — here (with its age: another
 #      session's, or something left behind) and in each satellite.
 #   5. Reminds the session that it syncs itself.
+#
+# It does not check the generated views. sync.sh regenerates them in every
+# commit, pre-commit refuses a stale one, and CI checks them again; the four
+# --check runs here took about 2 s of every start and caught nothing those
+# three miss.
 #
 # Always exits 0: a session must be able to start with the network down.
 
@@ -94,15 +100,23 @@ fi
 [ "$(hash_of CLAUDE.md)" = "$before_claude" ] || out "CLAUDE.md changed in that pull — re-read it in full before continuing (law 8)"
 [ "$(hash_of AGENTS.md)" = "$before_agents" ] || out "AGENTS.md changed in that pull — re-read it too"
 
-stale=""
-for g in gen-map gen-status gen-desk gen-commands; do
-  [ -f "os/scripts/$g.sh" ] || continue
-  /bin/bash "os/scripts/$g.sh" --check >/dev/null 2>&1 || stale="$stale $g"
-done
-if [ -n "$stale" ]; then
-  out "stale views:$stale — regenerate before trusting them (sync.sh does it for you)"
-else
-  out "views current (MAP, STATUS, DESK, adapters)"
+# A receipt is "YYYY-MM-DD <topic>: <summary>" at column 0, never inside a
+# code fence: a date that merely opens a sentence is prose, not a receipt.
+# Each is cut to 160 characters on a word boundary (PF-038); the whole line
+# is one grep away in os/worklog.md.
+if [ -f os/worklog.md ]; then
+  rec=$(awk '/^[[:space:]]*(```|~~~)/ { f = !f; next } !f' os/worklog.md \
+    | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2} [^:]+: ' | tail -n 5 | awk '{
+      if (length($0) > 160) { s = substr($0, 1, 160); sub(/[^ ]*$/, "", s); sub(/[[:space:],.;:-]+$/, "", s); $0 = s " …" }
+      print "  " $0 }')
+  if [ -n "$rec" ]; then
+    out "newest receipts (os/worklog.md):"
+    printf '%s\n' "$rec"
+  else
+    # Just after a yearly rotation, point at the epoch that holds them (law 9).
+    la=$(find archive -maxdepth 1 -type f -name 'worklog-*.md' 2>/dev/null | sort | tail -n 1)
+    [ -z "$la" ] || out "no receipts since the yearly rotation — the last ones are in $la"
+  fi
 fi
 
 now=$(date +%s)

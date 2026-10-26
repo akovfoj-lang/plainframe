@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
-# gen-status.sh — write STATUS.md: receipts, counts, flags, git state.
+# gen-status.sh — write STATUS.md: counts and open flags.
 #
 # Usage: os/scripts/gen-status.sh          regenerate STATUS.md in place
 #        os/scripts/gen-status.sh --check  exit 1 (writing nothing) if STATUS.md is stale
 #
-# Reports: last 10 worklog receipts · inbox count + oldest item age (days, from
-# each item's "captured-at:" line, file time only as a fallback — PF-028) ·
-# incubator counts by "status:" line · workspace counts by "status:" line ·
-# answers count · open flags (FLAG: lines in os/roadmap.md,
-# plus any decisions.md entry still "**Status:** draft" — void until confirmed, law 2,
-# plus any dated worklog line the receipt list cannot see — PF-027) ·
-# latest /audit report + its 🔴/🟡 flag counts, one per check heading, if any
-# report exists (PF-009, PF-026) ·
-# git state (branch, dirty file count, unpushed commit count).
-# The dirty count excludes the generated views — counting the file this
-# script is about to write would make --check permanently unstable.
-# --check ignores volatile lines (dirty files, unpushed commits, oldest age):
-# they are true at generation time but drift with no repo change — a committed
-# STATUS would otherwise be stale-by-construction on every clean clone.
+# Reports: inbox count + oldest item age (days, from each item's "captured-at:"
+# line, file time only as a fallback — PF-028) · incubator counts by "status:"
+# line · workspace counts by "status:" line · answers count · open flags
+# (FLAG: lines in os/roadmap.md, plus any decisions.md entry still
+# "**Status:** draft" — void until confirmed, law 2, plus any dated worklog
+# line that misses the receipt shape — PF-027) · latest /audit report + its
+# 🔴/🟡 flag counts, one per check heading, if any report exists (PF-009,
+# PF-026).
+# No receipts and no git state: either one changed STATUS in every commit
+# (481 of 481 in one review), for facts that live elsewhere. The newest
+# receipts are in session-start.sh's report, all of them in os/worklog.md;
+# the live git state is in that report too, and in `git status`.
+# --check ignores the one volatile line (the oldest inbox item's age): it is
+# true at generation time but drifts with no repo change — a committed STATUS
+# would otherwise be stale-by-construction on every clean clone.
 # STATUS.md is only ever written by this script (law 6).
 
 set -eu
@@ -60,11 +61,6 @@ top_md0() {
   done | sort -z
 }
 
-# The Git section describes the working tree an owner actually uses. sync.sh
-# builds its commits in a scratch worktree (detached, clean by construction)
-# and points this at the real one (PF-030).
-LIVE=${PLAINFRAME_LIVE_ROOT:-.}
-
 # An inbox item's capture date from its envelope (`captured-at: YYYY-MM-DD`,
 # os/playbooks/ingest.md; the HTML-comment form is accepted too), as epoch
 # seconds at local midnight — BSD date first, GNU date as fallback, validated
@@ -87,36 +83,8 @@ captured_at() {
 generate() {
   printf '%s\n' '<!-- GENERATED — do not hand-edit. Regenerate: os/scripts/gen-status.sh -->'
   printf '\n# STATUS\n\n'
-  printf '%s\n' 'Receipts, counts, and open flags — reported, never inferred from prose (law 6).'
-
-  # -- Last 10 receipts ------------------------------------------------------
-  printf '\n## Last 10 receipts\n\n'
-  : > "$TMP/receipts"
-  if [ -f os/worklog.md ]; then
-    # A receipt is "YYYY-MM-DD <topic>: <summary>" at column 0, never inside a
-    # code fence: a date that merely opens a sentence is prose, not a receipt.
-    awk '/^[[:space:]]*(```|~~~)/ { f = !f; next } !f' os/worklog.md \
-      | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2} [^:]+: ' > "$TMP/receipts" || true
-  fi
-  rc=$(wc -l < "$TMP/receipts"); rc=$((rc))
-  if [ "$rc" -gt 0 ]; then
-    # Each cut to 160 characters on a word boundary (PF-038): this page is read
-    # at every session start, and ten full receipts once made up 91% of it.
-    # The whole line is still in os/worklog.md, one grep away.
-    tail -10 "$TMP/receipts" | awk '{
-      if (length($0) > 160) { s = substr($0, 1, 160); sub(/[^ ]*$/, "", s); sub(/[[:space:],.;:-]+$/, "", s); $0 = s " …" }
-      print "- " $0 }'
-  else
-    # Just after a yearly rotation, point at the epoch that holds them (law 9).
-    la=$(find archive -maxdepth 1 -type f -name 'worklog-*.md' 2>/dev/null | sort | tail -n 1)
-    if [ -n "$la" ]; then
-      na_r=$(grep -cE '^[0-9]{4}-[0-9]{2}-[0-9]{2} [^:]+: ' "$la" || true)
-      printf -- '- (none since the rotation — %s receipt(s) in %s)\n' "$na_r" "$la"
-    else
-      printf -- '- (none)\n'
-    fi
-  fi
-
+  printf '%s\n' 'Counts and open flags — reported, never inferred from prose (law 6). The newest'
+  printf '%s\n' 'receipts are in the session-start report; all of them are in os/worklog.md.'
   # -- Inbox -----------------------------------------------------------------
   printf '\n## Inbox\n\n'
   : > "$TMP/inbox0"
@@ -217,15 +185,15 @@ generate() {
   fi
   cat "$TMP/drafts" >> "$TMP/flags"
   # A dated worklog line that misses the column-0 receipt shape — bulleted or
-  # indented — is invisible to the receipt list above, and --check passed
-  # anyway, so the receipt silently fell out of STATUS (PF-027). It is
-  # surfaced here as an open flag rather than failing --check: a mis-shaped
-  # record is something to straighten, not a reason to block every commit.
+  # indented — is invisible to every reader of receipts, so it silently fell
+  # out of view (PF-027). It is surfaced here as an open flag rather than
+  # failing --check: a mis-shaped record is something to straighten, not a
+  # reason to block every commit.
   if [ -f os/worklog.md ]; then
     awk '/^[[:space:]]*([-*+][[:space:]]+)?[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ &&
          !/^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ {
            d = $0; sub(/^[^0-9]*/, "", d)
-           printf "MALFORMED receipt at os/worklog.md:%d (dated %s): not at column 0, so the receipt list cannot see it (law 9)\n", NR, substr(d, 1, 10) }' \
+           printf "MALFORMED receipt at os/worklog.md:%d (dated %s): not at column 0, so it does not read as a receipt (law 9)\n", NR, substr(d, 1, 10) }' \
       os/worklog.md >> "$TMP/flags"
   fi
   fc=$(wc -l < "$TMP/flags"); fc=$((fc))
@@ -238,8 +206,8 @@ generate() {
   # -- Audit -------------------------------------------------------------------
   # Surfaces the latest /audit report and its flag counts (PF-009) — an audit
   # report is content in the tree (archive/audit-YYYY-MM-DD.md), not a git or
-  # filesystem-timing fact, so unlike the Git section below this needs no
-  # exclusion from --check: it is exactly as stable as any other tracked file.
+  # filesystem-timing fact, so it needs no exclusion from --check: it is
+  # exactly as stable as any other tracked file.
   printf '\n## Audit\n\n'
   latest_audit=""
   if [ -d archive ]; then
@@ -273,62 +241,14 @@ EOF
   else
     printf -- '- latest: none yet — run /audit\n'
   fi
-
-  # -- Git -------------------------------------------------------------------
-  printf '\n## Git\n\n'
-  printf -- '_Snapshot from the last regen, not live — branch/dirty/unpushed below are only\n'
-  printf -- 'as current as this file. Run `os/scripts/gen-status.sh` (or plain `git status`)\n'
-  printf -- 'for the real-time state._\n\n'
-  if git -C "$LIVE" rev-parse --git-dir >/dev/null 2>&1; then
-    branch=$(git -C "$LIVE" rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="(no branch)"
-    dirty=$(git -C "$LIVE" status --porcelain -- ':(exclude)MAP.md' ':(exclude)STATUS.md' ':(exclude)DESK.md' | wc -l)
-    dirty=$((dirty))
-    printf -- '- branch: %s\n' "$branch"
-    printf -- '- dirty files: %s (generated views excluded)\n' "$dirty"
-    if git -C "$LIVE" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
-      ahead=$(git -C "$LIVE" rev-list --count '@{u}..HEAD'); ahead=$((ahead))
-      printf -- '- unpushed commits: %s\n' "$ahead"
-    else
-      printf -- '- unpushed commits: (no upstream)\n'
-    fi
-    # Satellites: one line each — a stuck satellite must not rot invisibly
-    # behind a clean main repo (law 8). Volatile: stripped in --check.
-    if [ -f os/satellites.txt ]; then
-      satellite_list > "$TMP/sats"
-      while IFS= read -r sp; do
-        if [ ! -e "$sp" ]; then
-          printf -- '- satellite %s: missing\n' "$sp"
-        elif ! git -C "$sp" rev-parse --git-dir >/dev/null 2>&1; then
-          printf -- '- satellite %s: not a git repo\n' "$sp"
-        else
-          sd=$(git -C "$sp" status --porcelain | wc -l); sd=$((sd))
-          if git -C "$sp" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
-            sa=$(git -C "$sp" rev-list --count '@{u}..HEAD'); sa=$((sa))
-          else
-            sa="(no upstream)"
-          fi
-          printf -- '- satellite %s: dirty %s, unpushed %s\n' "$sp" "$sd" "$sa"
-        fi
-      done < "$TMP/sats"
-    fi
-  else
-    printf -- '- (not a git repo)\n'
-  fi
 }
 
 generate > "$TMP/STATUS.md"
 
-# Drop lines that drift with no repo change — see header. Never used when writing.
-# `branch` joined dirty/unpushed/oldest/satellite here (MAJOR 4): switching
-# branches must not block every commit until a regen nobody asked for.
-# `(not a git repo)` is here too — not because it drifts on a real clone,
-# but because the pre-commit hook validates the STAGED INDEX by exporting it
-# to a plain, non-git temp directory (PF-002) and running this script
-# against that export; git genuinely is unavailable there, which is a fact
-# about the checking environment, not about repo content, so it must never
-# read as staleness.
+# Drop the line that drifts with no repo change — see header. Never used when
+# writing.
 strip_volatile() {
-  grep -vE '^- (dirty files|unpushed commits|oldest|branch):|^- satellite |^- \(not a git repo\)$' "$1" || true
+  grep -vE '^- oldest:' "$1" || true
 }
 
 if [ "${1:-}" = "--check" ]; then
