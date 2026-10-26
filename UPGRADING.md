@@ -57,6 +57,22 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.11.0 to 1.12.0
+
+- **Sessions read `profile.md` at start.** If your clone has none, run /onboard to write
+  it. Every session start now reads the whole file, so keep it to how you work.
+- **Start handoffs with `os/scripts/new-handoff.sh <topic-slug>`.** Your old handoffs stay
+  as they are; the script links the newest one, by its timestamped name, under "Continues
+  from". If you changed `_templates/handoff.md`, the script still fills the lines that
+  start `# Handoff: `, `**Saved as:**` and `**Continues from:**`, and leaves the rest as
+  your template has it.
+- **`os/playbooks/delegate.md` starts with an empty budget table.** Add each helper you
+  measure. If your delegation rules live elsewhere, in an agent's memory say, move them here
+  and leave a pointer there, so every agent reads one home (law 3).
+- **If you keep `os/claude-setup.md`**, MAP lists it once regenerated (step 4). /audit's
+  invisible-homes check now expects Claude Code's memory folder, skills and scheduled tasks
+  named on a tracked page.
+
 ## Coming from 1.10.0 to 1.11.0
 
 - **Each sync is one commit.** The work and its receipt go in together; with no

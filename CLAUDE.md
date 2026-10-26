@@ -16,7 +16,8 @@ you.
    first (`AGENTS.md`). It pulls, says if this file changed (then re-read it), lists the
    newest receipts (what happened), and names uncommitted or stuck work here and in the
    satellites.
-2. Glance at `DESK.md` (what is waiting).
+2. Read `profile.md` (how the owner works; it may tighten a tier, never loosen one) and
+   glance at `DESK.md` (what is waiting).
 3. Read `MAP.md`, then only the pages it routes you to. Take the task.
 
 **END** — and after every finished unit of work, not only at the end
@@ -141,6 +142,8 @@ hook is wrong — never a routine way around a block.
   first thing in a fresh clone.
 - Full orientation for a human: `os/playbooks/guide.md` (run `/guide`).
 - The ten commands and their playbooks: `os/commands.md`.
+- Handing work to a helper — a subagent, a workflow, another session or model:
+  `os/playbooks/delegate.md`. Read it before starting one.
 - `/level-up` — weekly 3Ms interview that ships one automation: `os/playbooks/level-up.md`.
 - `/deepen` — rewrites a task as the deeper version a top professional would do, then
   stops for "go": `os/playbooks/deepen.md`. Its playbook doubles as a portable skill.

@@ -14,7 +14,8 @@
 # treatment as any other root file — present once third-party content ships.
 # archive/ is always a single line; areas/ also lists each area one level deep.
 # os/ lists its core kernel files (ledger, roadmap, routine, worklog, commands,
-# integrations) plus os/handoffs/ with a pointer to the latest handoff (PF-009) — law 1 says
+# integrations, and the Claude setup pointer where a clone has one) plus
+# os/handoffs/ with a pointer to the latest handoff (PF-009) — law 1 says
 # agents reach pages only through MAP, so the ledger law 2 elevates above
 # everything, and the handoff chain a session needs to resume from, must both
 # be routable from here.
@@ -130,7 +131,7 @@ generate() {
     fi
     # os/ lists the kernel core files so law 1 can actually reach them.
     if [ "$d" = "os" ]; then
-      for kf in os/commands.md os/decisions.md os/roadmap.md os/routine.md os/worklog.md os/integrations/README.md; do
+      for kf in os/commands.md os/decisions.md os/roadmap.md os/routine.md os/worklog.md os/integrations/README.md os/claude-setup.md; do
         [ -f "$kf" ] || continue
         kt=$(file_h1 "$kf")
         [ -n "$kt" ] || kt="(no title)"

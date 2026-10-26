@@ -9,6 +9,47 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.12.0] — 2026-10-26
+
+A review of a private clone found four things its sessions never saw. `/onboard` writes
+`profile.md`, the owner's own tightenings and tone, but no step of the read path opened it.
+The rules for handing work to a helper lived in one agent's memory, so no other agent or
+model had them. No tracked page named Claude Code's own folders outside the repo, which law
+4 asks for. And after a handoff was written, the owner had to ask where it was, four times
+or more. This release closes all four. 144 tests, up from 142: two new, for the handoff
+script. On 1.11.0 both fail.
+
+### Added
+
+- **`os/playbooks/delegate.md`**: how to hand work to a helper — a subagent, a workflow,
+  another session or model. Say the cost first and get a yes; one helper at a time; launch a
+  big one right after a usage window resets; bulk work goes to a smaller model while the
+  main session keeps what needs exact bytes or a judgement. It lists what a brief must
+  require, keeps the session open (a helper dies with it), times a resume on the wall clock,
+  and treats a helper's report as a claim to check. Its budget table starts empty: add each
+  helper you measure. CLAUDE.md's "Where the rest lives" links it.
+- **`os/scripts/new-handoff.sh <topic-slug>`** starts a handoff from `_templates/handoff.md`
+  as `os/handoffs/YYYY-MM-DD-HHMMSS-<topic-slug>.md`, with its title, "Saved as" and
+  "Continues from" (the newest handoff before it, or "none — chain start") filled in. Its
+  last line is the new file's path. It never overwrites a file (exit 1) and refuses a topic
+  that is not a slug (exit 2).
+
+### Changed
+
+- **Sessions read `profile.md` at start.** CLAUDE.md START step 2: read `profile.md` (how the
+  owner works; it may tighten a tier, never loosen one), then glance at `DESK.md`. In the
+  clone this came from, that is about 800 tokens a session. A clone that has not run
+  /onboard has no `profile.md` yet.
+- **The handoff playbook uses the script**, and its last step says the reply to the owner
+  starts with the handoff's path, as a link, never under a summary.
+- **MAP lists `os/claude-setup.md`** with the os/ kernel files when a clone keeps one: a
+  pointer page to Claude Code's folders outside the repo. The template ships none, so its
+  own MAP is unchanged.
+- **/audit's invisible-homes check names Claude Code's own folders**: the repo's memory
+  folder under `~/.claude/projects/`, `~/.claude/skills/` and `~/.claude/scheduled-tasks/`
+  each need a line on a tracked page (`os/claude-setup.md` where a clone has one), and so
+  does any folder that page does not yet name.
+
 ## [1.11.0] — 2026-10-26
 
 A review of a private clone counted what the kernel's own upkeep cost. 175 of its 502

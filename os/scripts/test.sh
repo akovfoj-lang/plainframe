@@ -537,6 +537,15 @@ grep -qF '**Crlf note** —' "$A/DESK.md"; v "DESK: a CRLF note's title carries 
 reset_world; printf '\n- FLAG: bulleted flag\n  FLAG: indented flag\n```\nFLAG: fenced example\n```\n' >> "$A/os/roadmap.md"; regen "$A"
 grep -qF 'FLAG: bulleted flag' "$A/STATUS.md" && grep -qF 'FLAG: indented flag' "$A/STATUS.md" && ! grep -qF 'fenced example' "$A/STATUS.md" && grep -qF 'FLAG: bulleted flag' "$A/DESK.md"; v "open flags: bulleted and indented count, a fenced example does not"
 reset_world; printf '2099-01-02 invoices: sent the december ones\n' > "$A/archive/worklog-2099.md"; grep -vE '^[0-9]{4}-[0-9]{2}-[0-9]{2} ' "$A/os/worklog.md" > "$W/wl"; cp "$W/wl" "$A/os/worklog.md"; mk session-start.sh; said 'the last ones are in archive/worklog-2099.md'; v "session start: after a rotation, it points at the archived receipts" "$W/out"
+# -- Handoffs ----------------------------------------------------------------------
+echo "== handoffs"
+reset_world; prev=$(find "$A/os/handoffs" -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]-*.md' 2>/dev/null | sort | tail -n 1); prev=${prev##*/}
+if [ -n "$prev" ]; then want="**Continues from:** [$prev]($prev)"; else want="**Continues from:** none — chain start"; fi
+mk new-handoff.sh my-topic; r=$?; nh=$(tail -n 1 "$W/out")
+[ "$r" -eq 0 ] && [ -f "$A/$nh" ] && printf '%s\n' "$nh" | grep -qE '^os/handoffs/[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}-my-topic\.md$' \
+  && grep -qF "**Saved as:** \`$nh\`" "$A/$nh" && grep -qxF "$want" "$A/$nh" && grep -qx '# Handoff: my topic' "$A/$nh"; v "new-handoff: from the template, chained to the last one, its path printed last" "$W/out"
+n=$(find "$A/os/handoffs" -type f | wc -l); mk new-handoff.sh "Not A Slug"; r=$?
+[ "$r" -eq 2 ] && [ "$(find "$A/os/handoffs" -type f | wc -l)" -eq "$n" ]; v "new-handoff: a topic that is not a slug is refused, nothing written" "$W/out"
 # -- Session start -----------------------------------------------------------------
 echo "== session start"
 reset_world; put_line "$B/CLAUDE.md" "a new rule"
