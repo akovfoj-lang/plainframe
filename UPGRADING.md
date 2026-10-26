@@ -57,6 +57,15 @@ os/scripts/gen-commands.sh && os/scripts/gen-map.sh && os/scripts/gen-desk.sh &&
 
 The regenerated output is the only version that can be correct either way.
 
+## Coming from 1.9.0 to 1.10.0
+
+- **A line that already starts with `DUE:` shows on DESK after the merge.** Regenerate
+  DESK (step 4) and read "Waiting on you". If one of yours meant something else, reword
+  it. Lines in `inbox/`, `archive/`, `os/handoffs/`, `brainstorms/`, a routed block or a
+  code fence never count.
+- **To add a deadline**, write `DUE: 2026-11-04 send the application` on the page it
+  belongs to. DESK lists it until you delete the line, even after the date has passed.
+
 ## Coming from 1.8.1 to 1.9.0
 
 - **Claude Code refuses the Never tier through deny rules now, not the hook.** The merge

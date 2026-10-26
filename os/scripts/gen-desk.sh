@@ -23,6 +23,12 @@
 # A satellite that is not on this machine is listed as unavailable, never
 # silently dropped.
 #
+# Waiting on you opens with the owner's deadlines: every "DUE: YYYY-MM-DD what"
+# line, soonest first, from `markers.sh --due`. The line shows the date itself,
+# never "in 9 days": DESK is checked for staleness at every commit and session
+# start, so a line that changed with the calendar would be stale by morning.
+# A deadline stays listed until its DUE line is deleted.
+#
 # Waiting on you also names a satellite whose uncommitted work is more than a
 # day old (PF-041): sync.sh skips a dirty satellite until the owner has looked,
 # so without this line it could sit unsynced, on one disk, for weeks.
@@ -121,6 +127,14 @@ generate() {
   # -- Waiting on you --------------------------------------------------------
   printf '\n## Waiting on you\n\n'
   : > "$TMP/wait"
+  if /bin/bash "$ROOT/os/scripts/markers.sh" --due > "$TMP/due" 2>/dev/null; then
+    while IFS=$'\t' read -r dd dp _ dt; do
+      [ -n "$dp" ] || continue
+      printf -- '- **Due %s** — %s — [%s](%s)\n' "$dd" "$(trim "${dt:-(no text)}" 160)" "$dp" "$dp" >> "$TMP/wait"
+    done < "$TMP/due"
+  else
+    printf -- '- **Deadlines unreadable** — `os/scripts/markers.sh --due` failed\n' >> "$TMP/wait"
+  fi
   if [ -d workspace ]; then
     for f in workspace/*.md; do
       [ -f "$f" ] || continue

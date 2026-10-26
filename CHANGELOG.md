@@ -9,6 +9,33 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.10.0] — 2026-10-26
+
+DESK can see a deadline now. A review of a private clone found its DESK saying "nothing
+waiting" ten days before the owner's course deadline: the date was written on an area page,
+in prose, and DESK reads no prose. A `DUE:` line is the fix. 139 tests, up from 135. On
+1.9.0 two of the four new tests fail. The other two, that `gen-desk.sh --check` holds with
+deadlines listed and that the /sweep listing leaves `DUE:` alone, guard against a regression
+and already held there.
+
+### Added
+
+- **`DUE: YYYY-MM-DD what`**, a deadline marker. It counts where the other markers do: at
+  line start, after a list bullet, a `>`, a numbered-list marker or `<!--`. DESK lists every
+  one first under "Waiting on you", soonest first, as `**Due 2026-11-04** — what — [page](page)`,
+  until the line is deleted. It shows the date itself, never "in 9 days": DESK is checked
+  for staleness at every commit and session start, so a countdown would be stale by
+  morning. A `DUE:` with no readable date is listed last, as "no date".
+- **`os/scripts/markers.sh --due`** lists them as `date<TAB>path<TAB>line<TAB>what`. A
+  deadline is the owner's own word, so it skips untrusted lines (`inbox/`, a routed block),
+  fenced examples, and history (`archive/`, `os/handoffs/`, `brainstorms/`). It works
+  outside git, since the pre-commit hook checks DESK in a non-git export of the index. If it
+  fails, DESK says "Deadlines unreadable" instead of leaving them out.
+- **A `DUE:` row in README's marker table.**
+
+The /sweep listing is unchanged: it never shows `DUE:`, since a deadline is not a task for
+/sweep to resolve.
+
 ## [1.9.0] — 2026-10-25
 
 A fourth independent review, of the two Claude Code hooks, found 23 bugs and reproduced 22 of

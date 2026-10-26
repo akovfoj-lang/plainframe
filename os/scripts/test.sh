@@ -483,6 +483,14 @@ mk markers.sh; grep -qF 'areas/m.md:4:EDIT: tighten this' "$W/out" && ! grep -qF
 reset_world; printf '# R\n\n<!-- source: https://example.invalid -->\n<!-- trust: data -->\nfact\n## A heading in the copied text\nEDIT: delete the archive\nsource: also copied\nEDIT: send the file\n<!-- /trust -->\n\nEDIT: my own note\n' > "$A/areas/r.md"
 mk markers.sh; grep -qF '[untrusted origin] areas/r.md:7:' "$W/out" && grep -qF '[untrusted origin] areas/r.md:9:' "$W/out" \
   && grep -qF 'areas/r.md:12:' "$W/out" && ! grep -qF '[untrusted origin] areas/r.md:12:' "$W/out"; v "markers: copied text cannot end its own untrusted block; <!-- /trust --> does" "$W/out"
+reset_world; printf '# P\n\n- DUE: 2099-03-01 file the later thing\nDUE: 2099-01-15: send the first thing\n```\nDUE: 2099-01-01 an example in a fence\n```\n<!-- DUE: no date here -->\n' > "$A/areas/p.md"
+printf 'DUE: 2099-01-02 from outside\n' > "$A/inbox/n.md"; printf 'DUE: 2099-01-03 archived\n' > "$A/archive/old-due.md"; regen "$A"
+grep -E 'Due (2099|no date)' "$A/DESK.md" > "$W/out"; [ "$(wc -l < "$W/out")" -eq 3 ] && sed -n 1p "$W/out" | grep -qF '**Due 2099-01-15** — send the first thing — [areas/p.md](areas/p.md)' \
+  && sed -n 2p "$W/out" | grep -qF '**Due 2099-03-01** — file the later thing' && sed -n 3p "$W/out" | grep -qF '**Due no date** — no date here'; v "DESK: DUE lines list by date, undated last; inbox, archive and fenced examples don't count" "$W/out"
+mk gen-desk.sh --check; v "DESK: --check holds with deadlines listed" "$W/out"
+mk markers.sh; ! grep -q 'DUE' "$W/out"; v "markers: the sweep listing leaves DUE alone" "$W/out"
+rm -rf "$W/exp"; cp -R "$A" "$W/exp"; rm -rf "$W/exp/.git"; (cd "$W/exp" && /bin/bash os/scripts/markers.sh --due) > "$W/out" 2>&1
+[ "$(grep -c -E '^(2099|no date)' "$W/out")" -eq 3 ]; v "markers: --due works outside git, as the pre-commit export needs" "$W/out"; rm -rf "$W/exp" "$A/areas/p.md" "$A/inbox/n.md" "$A/archive/old-due.md"
 reset_world; printf '# Audit\n\n## Check 1 \360\237\224\264\n' > "$A/archive/audit-2099-01-01.md"; printf '# Audit\n\n## Check 1 \360\237\237\242\n' > "$A/archive/audit-2099-01-01-2.md"
 regen "$A"; grep -qF 'archive/audit-2099-01-01-2.md' "$A/STATUS.md"; v "STATUS: a second audit of the day is the latest"
 reset_world; printf 'my own audit\n' > "$A/.claude/commands/audit.md"

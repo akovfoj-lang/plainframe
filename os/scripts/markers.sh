@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 # markers.sh — list EDIT: / Q: / IDEA: markers in the working tree.
 #
-# Usage: os/scripts/markers.sh
+# Usage: os/scripts/markers.sh          the sweep listing
+#        os/scripts/markers.sh --due    the owner's deadlines, for DESK
 #
 # Scans git-tracked files AND untracked-but-not-ignored ones, excluding MAP.md,
 # STATUS.md, and os/scripts/ (.git is never tracked). Used by /sweep beat 1.
+#
+# --due lists "DUE: YYYY-MM-DD what" lines instead, one per line as
+# date<TAB>path<TAB>line<TAB>what, soonest first; a DUE with no readable date
+# sorts last as "no date". gen-desk.sh puts them under "Waiting on you". A
+# deadline is the owner's own word, so --due skips untrusted lines (inbox/, a
+# routed block), fenced examples, and history (archive/, os/handoffs/,
+# brainstorms/). The sweep listing never shows DUE: a deadline is not a task
+# for /sweep to resolve. Outside git — the pre-commit hook checks DESK in a
+# non-git export of the index — --due walks the files instead.
 #
 # Patterns — kept simple on purpose:
 #   A marker counts at line start, after a list bullet, after a blockquote
@@ -47,12 +57,23 @@ if (set -o pipefail) 2>/dev/null; then set -o pipefail; fi
 LC_ALL=C
 export LC_ALL
 
+MODE=all
+case "${1:-}" in
+  "") ;;
+  --due) MODE=due ;;
+  *) echo "usage: os/scripts/markers.sh [--due]" >&2; exit 2 ;;
+esac
+
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT"
 
+IN_GIT=1
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
-  echo "ERROR: not a git repo — markers.sh enumerates files through git" >&2
-  exit 1
+  if [ "$MODE" != due ]; then
+    echo "ERROR: not a git repo — markers.sh enumerates files through git" >&2
+    exit 1
+  fi
+  IN_GIT=0
 fi
 
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/markers.XXXXXX")
@@ -74,10 +95,15 @@ trap 'rm -rf "$TMP"' EXIT
 # resurfacing a marker out of a deliberately deleted note is worse than
 # missing it. Everything else is still *reported*; what gates *acting* on a
 # marker is sweep.md's M1, which requires a repo-owned location, not this list.
-{
-  git ls-files -z --cached
-  git ls-files -z --others --exclude-standard
-} > "$TMP/files0"
+if [ "$IN_GIT" -eq 1 ]; then
+  {
+    git ls-files -z --cached
+    git ls-files -z --others --exclude-standard
+  } > "$TMP/files0"
+else
+  find . -path ./.git -prune -o -type f -print0 \
+    | while IFS= read -r -d '' f; do printf '%s\0' "${f#./}"; done > "$TMP/files0"
+fi
 
 # Apply the exclusions, then hand the survivors to ONE awk. Doing the taint
 # tracking and the tagging per file in separate processes cost two forks per
@@ -93,6 +119,9 @@ trap 'rm -rf "$TMP"' EXIT
 {
   while IFS= read -r -d '' f; do
     case $f in MAP.md|STATUS.md|DESK.md|os/scripts/*) continue ;; esac
+    if [ "$MODE" = due ]; then
+      case $f in archive/*|os/handoffs/*|brainstorms/*) continue ;; esac
+    fi
     [ -f "$f" ] || continue
     printf './%s\0' "$f"
   done < "$TMP/files0"
@@ -129,6 +158,7 @@ BEGIN {
   reEDIT = pfx "EDIT:"
   reIDEA = pfx "IDEA:"
   reQ    = pfx "Q:"
+  reDUE  = pfx "DUE:"
   nbuf = 0
   binary = 0
 }
@@ -164,6 +194,19 @@ FNR == 1 {
   # A marker shown inside a code fence is an example, not a marker.
   if ($0 ~ /^[[:space:]]*(```|~~~)/) { infence = !infence; next }
   if (infence) next
+  if (due) {
+    if ($0 !~ reDUE || tainted) next
+    t = $0
+    sub(reDUE "[[:space:]]*", "", t)
+    sub(/[[:space:]]*(-->)?[[:space:]]*\r?$/, "", t)
+    d = "no date"
+    if (t ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]([^0-9]|$)/) {
+      d = substr(t, 1, 10); t = substr(t, 11)
+      sub(/^[[:space:]]*[-:]*[[:space:]]*/, "", t)
+    }
+    buf[++nbuf] = sprintf("%s\t%s\t%d\t%s", d, disp, FNR, t)
+    next
+  }
   if ($0 !~ reEDIT && $0 !~ reIDEA && $0 !~ reQ) next
   p = tainted ? "[untrusted origin] " : ""
   if ($0 ~ reEDIT)      buf[++nbuf] = sprintf("EDIT:\t%s%s:%d:%s", p, disp, FNR, $0)
@@ -175,7 +218,12 @@ END { flush() }
 
 : > "$TMP/hits"
 if [ -s "$TMP/scan0" ]; then
-  xargs -0 awk "$MARKER_AWK" < "$TMP/scan0" >> "$TMP/hits" || true
+  xargs -0 awk -v due="$([ "$MODE" = due ] && echo 1 || echo 0)" "$MARKER_AWK" < "$TMP/scan0" >> "$TMP/hits" || true
+fi
+
+if [ "$MODE" = due ]; then
+  sort "$TMP/hits"
+  exit 0
 fi
 
 TOTAL=0

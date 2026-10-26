@@ -55,6 +55,7 @@ already are — mid-page, in Obsidian or any editor — and let the next `/sweep
 | `IDEA: a weekly rent-review reminder` | Seeds it in `incubator/` |
 | `Q: does the insurance auto-renew?` | Answers it, or files it to `answers/` or `workspace/` |
 | `EDIT: change my goal line to X` | Applies it to the page |
+| `DUE: 2026-11-04 send the application` | Nothing: it's a deadline, not a task. DESK lists it under "Waiting on you", by date, until you delete the line |
 
 Three things worth knowing:
 
