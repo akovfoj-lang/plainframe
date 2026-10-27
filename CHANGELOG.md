@@ -9,6 +9,27 @@ Versioning starts at 1.0.0 with this file: everything below predates `VERSION` e
 and is backfilled here for the record rather than split across version numbers that were
 never actually cut at the time.
 
+## [1.12.1] — 2026-10-26
+
+The repo's front page did not show what Plainframe does or how to start it until well past
+the fold: the quickstart sat a third of the way down, after the philosophy. The README is
+reorganised for a first-time visitor. No kernel change; 144 tests, as on 1.12.0.
+
+### Changed
+
+- **README reorganised.** A centred header with CI, release and license badges and a
+  one-paragraph pitch; "What you get" in six points; the loop diagram with its seven steps
+  numbered; then the quickstart, with `doctor.sh --setup` as its own step and the real
+  session-start report of a fresh clone. Setup details and the FAQ fold open on click.
+  Markers, the mechanism table, the commands, the ten laws and the rest follow.
+- **The ten laws' one-liners match CLAUDE.md again.** Law 4 names satellite asset homes,
+  law 6 names DESK.md, and law 8 says the session syncs its own work; the README had
+  drifted on all three.
+- **New FAQ entry, "Is there an app or a UI?"**, replaces "Why not a database or an app?":
+  the repo is a folder of markdown, so Obsidian, VS Code, GitHub's web view or any editor
+  works, and markers typed in any of them reach the next `/sweep`.
+- **A new `DUE:` example** in the README's marker table.
+
 ## [1.12.0] — 2026-10-26
 
 A review of a private clone found four things its sessions never saw. `/onboard` writes
