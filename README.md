@@ -8,6 +8,8 @@
 [![release](https://img.shields.io/github/v/release/akovfoj-lang/plainframe)](CHANGELOG.md)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
+https://github.com/user-attachments/assets/7037a272-6e30-4c1c-8be0-d13b5e442009
+
 One Git repo holds your notes, plans and rules. Claude Code, Codex or any other agent opens
 it, sees where the last session stopped, files what you drop in, and leaves a dated receipt
 for every change.
